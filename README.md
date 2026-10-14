@@ -58,12 +58,11 @@ src/
 
 ## Deploy
 
-The build uses relative asset paths, so `dist/` works on any static host.
+Hosted on **Netlify**. `netlify.toml` holds the build settings (Node 22,
+`npm run build`, publish `dist`), so linking the repo in Netlify is all that's
+needed; every push to `main` redeploys.
 
-- **GitHub Pages:** push to `main`. The workflow in `.github/workflows/deploy.yml`
-  builds and publishes. In the repo, open Settings → Pages and set Source to
-  "GitHub Actions" once.
-- **Netlify / Vercel:** import the repo; build command `npm run build`, output `dist`.
+The build uses relative asset paths, so `dist/` also works on any other static host.
 
 ## Credits
 
