@@ -51,14 +51,18 @@ export function createStage(container: HTMLElement, { fov = 35, onFrame, onResiz
     alpha: true,
     powerPreference: "high-performance",
   });
-  // Phones already have dense screens; capping the ratio keeps fill-rate sane.
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, coarse ? 1.5 : 2));
+  // Resolution adapts to how fast this device renders (see the loop below).
+  // Phones already have dense screens, so they start lower.
+  const maxDpr = Math.min(window.devicePixelRatio || 1, coarse ? 1.5 : 2);
+  let dpr = maxDpr;
+  renderer.setPixelRatio(dpr);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   // Neutral keeps the cobalt from drifting to lavender.
   renderer.toneMapping = THREE.NeutralToneMapping;
   renderer.toneMappingExposure = 1.0;
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFShadowMap;
+  // No shadow maps: scenes use soft contact-shadow decals instead, which
+  // look softer and cost one textured quad rather than extra render passes.
+  renderer.shadowMap.enabled = false;
   renderer.domElement.setAttribute("aria-hidden", "true");
   container.appendChild(renderer.domElement);
 
@@ -105,15 +109,48 @@ export function createStage(container: HTMLElement, { fov = 35, onFrame, onResiz
   );
   io.observe(container);
 
+  // Adaptive resolution: if frames run slow, render fewer pixels; if they
+  // run fast for a while, step back up. Keeps motion smooth on weak GPUs.
+  let frameMs = 16;
+  let slowFor = 0;
+  let fastFor = 0;
+  const adapt = (ms: number, dt: number) => {
+    frameMs += (ms - frameMs) * 0.08;
+    slowFor = frameMs > 24 ? slowFor + dt : 0;
+    fastFor = frameMs < 14 ? fastFor + dt : 0;
+    if (slowFor > 0.6 && dpr > 0.75) {
+      dpr = Math.max(0.75, dpr - 0.25);
+      renderer.setPixelRatio(dpr);
+      resize();
+      slowFor = 0;
+    } else if (fastFor > 3 && dpr < maxDpr) {
+      dpr = Math.min(maxDpr, dpr + 0.25);
+      renderer.setPixelRatio(dpr);
+      resize();
+      fastFor = 0;
+    }
+  };
+
   let raf = 0;
   let last = performance.now();
   let elapsed = 0;
+  let wasVisible = true;
   const loop = (now: number = performance.now()) => {
     raf = requestAnimationFrame(loop);
-    const dt = Math.min(Math.max(0, (now - last) / 1000), 0.1);
+    const ms = now - last;
+    const dt = Math.min(Math.max(0, ms / 1000), 0.1);
     last = now;
+    if (!visible || document.hidden) {
+      wasVisible = false;
+      return;
+    }
+    // Coming back on screen: don't count the time spent hidden.
+    if (!wasVisible) {
+      wasVisible = true;
+      return;
+    }
     elapsed += dt;
-    if (!visible || document.hidden) return;
+    adapt(ms, dt);
     pointer.sx += (pointer.x - pointer.sx) * Math.min(1, dt * 6);
     pointer.sy += (pointer.y - pointer.sy) * Math.min(1, dt * 6);
     onFrame?.(dt, elapsed);

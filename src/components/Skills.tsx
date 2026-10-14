@@ -14,7 +14,7 @@ export default function Skills() {
   return (
     <section className="section skills" id="skills" aria-labelledby="skills-title">
       <div className="wrap skills__head">
-        <h2 id="skills-title" className="kicker">
+        <h2 id="skills-title" className="kicker" data-reveal>
           Skills
         </h2>
         <div className="skills__readout" aria-live="polite">

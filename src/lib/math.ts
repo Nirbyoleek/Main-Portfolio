@@ -14,3 +14,28 @@ export const smoothstep = (a: number, b: number, v: number): number => {
 
 /** Wraps an index into 0..n-1, including negative values. */
 export const wrap = (i: number, n: number): number => ((i % n) + n) % n;
+
+/** A damped spring's moving parts: position and velocity. */
+export interface Spring {
+  x: number;
+  v: number;
+}
+
+/**
+ * Advances a damped spring toward `target`. Stiffness sets how quickly it
+ * pulls, damping how much it resists; below critical damping
+ * (2·√stiffness) it overshoots and settles, which reads as "physical".
+ * Sub-stepped so a long frame doesn't make it explode.
+ */
+export function stepSpring(s: Spring, target: number, stiffness: number, damping: number, dt: number): number {
+  const steps = Math.max(1, Math.ceil(dt / (1 / 120)));
+  const h = dt / steps;
+  for (let i = 0; i < steps; i++) {
+    const a = stiffness * (target - s.x) - damping * s.v;
+    s.v += a * h;
+    s.x += s.v * h;
+  }
+  return s.x;
+}
+
+export const spring = (x = 0): Spring => ({ x, v: 0 });

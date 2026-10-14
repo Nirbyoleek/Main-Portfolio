@@ -4,6 +4,7 @@ import { education, experience, person, strengths, impact } from "../data/conten
 /** Inline style that sets the bar width through a CSS custom property. */
 const barWidth = (w: string) => ({ "--w": w }) as CSSProperties;
 import { durationLabel, totalMonths } from "../lib/format";
+import { CountUp } from "../lib/motion";
 
 export default function About() {
   const total = durationLabel(totalMonths(experience));
@@ -21,7 +22,7 @@ export default function About() {
     <section className="section about" id="about" aria-labelledby="about-title">
       <div className="wrap about__grid">
         <div className="about__lead">
-          <h2 id="about-title" className="kicker">
+          <h2 id="about-title" className="kicker" data-reveal>
             About me
           </h2>
           <p className="about__statement">
@@ -36,7 +37,7 @@ export default function About() {
           </p>
         </div>
 
-        <aside className="glance" aria-labelledby="glance-title">
+        <aside className="glance" aria-labelledby="glance-title" data-reveal>
           <div className="glance__head">
             <h3 id="glance-title">At a glance</h3>
             <a className="link-btn" href={`./${person.resume}`} download>
@@ -56,9 +57,9 @@ export default function About() {
 
       <div className="wrap">
         <h3 className="sub-title">What I bring</h3>
-        <ul className="strengths">
-          {strengths.map((s) => (
-            <li key={s.title}>
+        <ul className="strengths" data-reveal>
+          {strengths.map((s, i) => (
+            <li key={s.title} style={{ "--i": i } as CSSProperties}>
               <h4>{s.title}</h4>
               <p>{s.body}</p>
             </li>
@@ -66,13 +67,15 @@ export default function About() {
         </ul>
 
         <h3 className="sub-title">Measured results</h3>
-        <ul className="impact">
-          {impact.map((d) => {
+        <ul className="impact" data-reveal>
+          {impact.map((d, i) => {
             const up = d.after > 100;
             return (
-              <li key={d.metric} className={up ? "is-up" : "is-down"}>
+              <li key={d.metric} className={up ? "is-up" : "is-down"} style={{ "--i": i } as CSSProperties}>
                 <div className="impact__top">
-                  <span className="impact__value">{d.change}</span>
+                  <span className="impact__value">
+                    <CountUp value={d.change} />
+                  </span>
                   <span className="impact__what">{d.metric}</span>
                 </div>
                 <div className="impact__bars" aria-hidden="true">

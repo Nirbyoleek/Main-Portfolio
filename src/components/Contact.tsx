@@ -47,7 +47,7 @@ export default function Contact() {
     <section className="section contact" id="contact" aria-labelledby="contact-title">
       <div className="wrap contact__grid">
         <div>
-          <h2 id="contact-title" className="kicker">
+          <h2 id="contact-title" className="kicker" data-reveal>
             Contact
           </h2>
           <p className="contact__lead">
@@ -111,7 +111,7 @@ export default function Contact() {
             <textarea name="message" rows={5} required />
           </label>
           <div className="form__foot">
-            <button className="btn btn--primary" type="submit" disabled={status.kind === "sending"}>
+            <button className="btn btn--primary" type="submit" data-magnetic disabled={status.kind === "sending"}>
               {status.kind === "sending" ? "Sending…" : "Send message"}
             </button>
             <p className={`form__status form__status--${status.kind}`} role="status">

@@ -161,7 +161,8 @@ dd {
     background 0.18s,
     color 0.18s,
     transform 0.18s,
-    box-shadow 0.18s;
+    box-shadow 0.18s,
+    translate 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2);
 }
 .btn svg {
   width: 20px;
@@ -340,8 +341,24 @@ dd {
   margin-left: auto;
 }
 .nav__links {
+  position: relative;
   display: flex;
   gap: 2px;
+}
+.nav__pill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: var(--ink);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 0.5s cubic-bezier(0.3, 1.25, 0.45, 1),
+    width 0.5s cubic-bezier(0.3, 1.25, 0.45, 1),
+    opacity 0.25s;
 }
 .nav__links a {
   position: relative;
@@ -355,8 +372,12 @@ dd {
 .nav__links a:hover {
   background: var(--paper-hi);
 }
-.nav__links a.is-active {
-  background: var(--ink);
+.nav__links a {
+  transition: color 0.3s;
+}
+.nav__links a.is-active,
+.nav__links a.is-active:hover {
+  background: transparent;
   color: var(--paper-hi);
 }
 .nav__k {
@@ -482,6 +503,9 @@ dd {
   .nav__resume-mobile {
     display: block;
     margin-top: 24px;
+  }
+  .nav__pill {
+    display: none;
   }
   .nav__resume-mobile a {
     font-size: 1.25rem;
@@ -979,8 +1003,9 @@ dd {
   padding-block: clamp(80px, 11vw, 150px);
 }
 .kicker {
+  --kw: 125;
   font-size: var(--t-h2);
-  font-variation-settings: "wdth" 125;
+  font-variation-settings: "wdth" var(--kw);
   letter-spacing: -0.035em;
   line-height: 0.9;
 }
@@ -1178,8 +1203,8 @@ dd {
   align-self: start;
 }
 .work .kicker {
+  --kw: 100;
   font-size: clamp(2.6rem, 1.2rem + 3.6vw, 4.6rem);
-  font-variation-settings: "wdth" 100;
 }
 .work__lead {
   margin-top: 24px;
@@ -1922,5 +1947,255 @@ dd {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+
+/* ------------------------------------------------------------------
+   Motion
+   Start states apply only under html.motion-ok, which JavaScript adds
+   when motion is allowed, so nothing is ever hidden without it.
+------------------------------------------------------------------- */
+:root {
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.3, 1.35, 0.45, 1);
+}
+
+/* Hero: the name opens out, then the rest of the intro follows it in. */
+@keyframes rise {
+  from {
+    transform: translateY(18px);
+    opacity: 0;
+  }
+}
+.hero__status {
+  animation: rise 0.7s var(--ease-out) 0.25s both;
+}
+.hero__role {
+  animation: rise 0.7s var(--ease-out) 0.75s both;
+}
+.hero__actions {
+  animation: rise 0.7s var(--ease-out) 0.9s both;
+}
+.hero__stats {
+  animation: rise 0.7s var(--ease-out) 1.05s both;
+}
+.hero__still {
+  animation: rise 0.9s var(--ease-out) 0.4s both;
+}
+.has-shell .hero__status,
+.has-shell .hero__role,
+.has-shell .hero__actions,
+.has-shell .hero__stats,
+.has-shell .hero__still {
+  animation: none;
+}
+
+/* Section titles open from condensed to full width as they arrive,
+   echoing the name in the hero. */
+.motion-ok .kicker[data-reveal] {
+  font-variation-settings: "wdth" 70;
+  letter-spacing: 0.01em;
+  transition:
+    font-variation-settings 1.1s var(--ease-out),
+    letter-spacing 1.1s var(--ease-out);
+}
+.motion-ok .kicker[data-reveal].is-in {
+  font-variation-settings: "wdth" var(--kw);
+  letter-spacing: -0.035em;
+}
+
+/* At-a-glance card slides up into place. */
+.motion-ok .glance[data-reveal] {
+  transform: translateY(28px) rotate(-1.2deg);
+  transition: transform 0.9s var(--ease-spring);
+}
+.motion-ok .glance[data-reveal].is-in {
+  transform: none;
+}
+
+/* Strengths: the top rule draws, then the text settles. */
+.motion-ok .strengths[data-reveal] li {
+  border-top-color: transparent;
+  background: linear-gradient(var(--cobalt), var(--cobalt)) top left / 0% 4px no-repeat;
+  transition: background-size 0.8s var(--ease-out) calc(var(--i, 0) * 120ms);
+}
+.motion-ok .strengths[data-reveal].is-in li {
+  background-size: 100% 4px;
+}
+.motion-ok .strengths[data-reveal] li > * {
+  transform: translateY(14px);
+  transition: transform 0.7s var(--ease-out) calc(120ms + var(--i, 0) * 120ms);
+}
+.motion-ok .strengths[data-reveal].is-in li > * {
+  transform: none;
+}
+
+/* Results: bars grow to their values, one card after another. */
+.motion-ok .impact[data-reveal] .bar {
+  width: 0;
+  transition: width 1.1s var(--ease-out) calc(200ms + var(--i, 0) * 140ms);
+}
+.motion-ok .impact[data-reveal] .bar--after {
+  transition-delay: calc(500ms + var(--i, 0) * 140ms);
+}
+.motion-ok .impact[data-reveal].is-in .bar {
+  width: var(--w);
+}
+.impact li {
+  transition:
+    transform 0.35s var(--ease-spring),
+    box-shadow 0.35s;
+}
+.impact li:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 0 -4px var(--mist);
+}
+
+/* Experience: the career strip fills in, the timeline draws with scroll,
+   and each role's marker pops as you reach it. */
+.motion-ok .span[data-reveal] .span__seg {
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.9s var(--ease-out);
+}
+.motion-ok .span[data-reveal] .span__seg:nth-child(1) {
+  transition-delay: 0.6s;
+}
+.motion-ok .span[data-reveal] .span__seg:nth-child(2) {
+  transition-delay: 0.4s;
+}
+.motion-ok .span[data-reveal] .span__seg:nth-child(3) {
+  transition-delay: 0.2s;
+}
+.motion-ok .span[data-reveal].is-in .span__seg {
+  transform: none;
+}
+.timeline {
+  position: relative;
+  border-left-color: var(--mist);
+}
+.timeline::after {
+  content: "";
+  position: absolute;
+  left: -2px;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  background: var(--ink);
+  transform-origin: top;
+  transform: scaleY(var(--tp, 1));
+}
+.motion-ok .timeline > li[data-reveal]::before {
+  transform: scale(0.4);
+  transition:
+    transform 0.6s var(--ease-spring),
+    background 0.3s;
+}
+.motion-ok .timeline > li[data-reveal].is-in::before {
+  transform: none;
+}
+.timeline > li::before {
+  z-index: 1;
+}
+.motion-ok .timeline > li[data-reveal] .timeline__body,
+.motion-ok .timeline > li[data-reveal] .timeline__when {
+  transform: translateX(-12px);
+  transition: transform 0.8s var(--ease-out) 0.1s;
+}
+.motion-ok .timeline > li[data-reveal].is-in .timeline__body,
+.motion-ok .timeline > li[data-reveal].is-in .timeline__when {
+  transform: none;
+}
+
+/* Projects: details slide in from the side you moved toward. */
+@keyframes swap-in {
+  from {
+    opacity: 0;
+    transform: translateX(calc(var(--d) * 28px));
+  }
+}
+.project__inner {
+  --d: 0;
+}
+.project__inner[data-dir="1"] {
+  --d: 1;
+}
+.project__inner[data-dir="-1"] {
+  --d: -1;
+}
+.project__inner:not([data-dir="0"]) > * {
+  animation: swap-in 0.5s var(--ease-out) both;
+}
+.project__inner:not([data-dir="0"]) > :nth-child(2) {
+  animation-delay: 40ms;
+}
+.project__inner:not([data-dir="0"]) > :nth-child(3) {
+  animation-delay: 80ms;
+}
+.project__inner:not([data-dir="0"]) > :nth-child(n + 4) {
+  animation-delay: 120ms;
+}
+.project-list button {
+  transition:
+    transform 0.3s var(--ease-spring),
+    background 0.25s,
+    border-color 0.25s,
+    color 0.25s;
+}
+.project-list button:hover {
+  transform: translateY(-2px);
+}
+
+/* Small things that answer the cursor. */
+.chips li,
+.tags li {
+  transition:
+    transform 0.25s var(--ease-spring),
+    border-color 0.2s;
+}
+.chips li:hover,
+.tags li:hover {
+  transform: translateY(-2px);
+}
+.skill-list button,
+.matrix__group li button {
+  transition:
+    color 0.2s,
+    transform 0.25s var(--ease-spring);
+}
+.matrix__group li button:hover {
+  transform: translateX(3px);
+}
+.contact__links a,
+.footer a {
+  text-decoration: none;
+  background: linear-gradient(currentColor, currentColor) left bottom / 100% 2px no-repeat;
+  padding-bottom: 3px;
+  transition: background-size 0.35s var(--ease-out);
+}
+.contact__links a:hover,
+.footer a:hover {
+  background-size: 0% 2px;
+  background-position: right bottom;
+}
+.icon-btn {
+  transition:
+    background 0.18s,
+    transform 0.3s var(--ease-spring);
+}
+.icon-btn:active {
+  transform: scale(0.9);
+}
+.form {
+  transition: transform 0.4s var(--ease-spring);
+}
+.form:focus-within {
+  transform: translate(-2px, -2px);
+  box-shadow: 10px 10px 0 var(--ink);
+}
+@media (prefers-reduced-motion: reduce) {
+  .timeline::after {
+    transform: none;
   }
 }

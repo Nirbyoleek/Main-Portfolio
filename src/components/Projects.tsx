@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { projects } from "../data/content";
 import { useScene } from "../hooks";
 import { drawProject } from "../lib/drawings";
@@ -33,6 +33,12 @@ export default function Projects() {
     )
   );
   const p = projects[index];
+  // Which way the details slide when the project changes.
+  const lastIndex = useRef(index);
+  const dir = index === lastIndex.current ? 0 : index > lastIndex.current ? 1 : -1;
+  useEffect(() => {
+    lastIndex.current = index;
+  }, [index]);
 
   const visible = projects.map((x, i) => ({ ...x, i })).filter((x) => filter === "all" || x.type === filter);
 
@@ -56,7 +62,7 @@ export default function Projects() {
   return (
     <section className="section projects" id="projects" aria-labelledby="projects-title">
       <div className="wrap projects__head">
-        <h2 id="projects-title" className="kicker">
+        <h2 id="projects-title" className="kicker" data-reveal>
           Projects
         </h2>
         <div className="projects__side">
@@ -84,6 +90,7 @@ export default function Projects() {
         </div>
 
         <article className="project" aria-live="polite">
+          <div className="project__inner" key={p.id} data-dir={dir}>
           <p className="project__kind">
             {p.type === "client" ? `Client work at ${p.client}` : "Personal project"}
           </p>
@@ -110,7 +117,7 @@ export default function Projects() {
             {p.link || p.repo ? (
               <div className="project__links">
                 {p.link && (
-                  <a className="btn" href={p.link} target="_blank" rel="noreferrer">
+                  <a className="btn" href={p.link} target="_blank" rel="noreferrer" data-magnetic>
                     Open live app
                   </a>
                 )}
@@ -141,6 +148,7 @@ export default function Projects() {
                 </svg>
               </button>
             </div>
+          </div>
           </div>
         </article>
       </div>

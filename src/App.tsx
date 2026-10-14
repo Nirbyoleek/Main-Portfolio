@@ -6,6 +6,7 @@ import Projects from "./components/Projects";
 import Skills from "./components/Skills";
 import Contact from "./components/Contact";
 import { person, stats } from "./data/content";
+import { CountUp, useMagneticButtons, useRevealOnScroll } from "./lib/motion";
 
 // On phones the hero keeps only name and actions, so the headline and
 // numbers follow directly after it.
@@ -20,7 +21,9 @@ function MobileStats() {
           {stats.map((s) => (
             <div key={s.label}>
               <dt>{s.label}</dt>
-              <dd>{s.value}</dd>
+              <dd>
+                <CountUp value={s.value} />
+              </dd>
             </div>
           ))}
         </dl>
@@ -30,6 +33,8 @@ function MobileStats() {
 }
 
 export default function App() {
+  useRevealOnScroll();
+  useMagneticButtons();
   return (
     <>
       <a className="skip" href="#main">

@@ -395,7 +395,14 @@ export function createAvatar(): Avatar {
     lastPointer: new THREE.Vector2(),
     hover: 0,
     happy: 0,
+    // Every so often, when nobody is waving at it, the avatar stretches.
+    stretchIn: 9 + Math.random() * 6,
+    stretching: 0,
+    // Tiny eye movements so the gaze never looks frozen.
+    saccade: new THREE.Vector2(),
+    saccadeIn: 1,
   };
+  const STRETCH = 2.6;
 
   const hitTargets = [torso, skull, capTop, capSides, capBack, ...quiff.children, ...face.children];
 
@@ -416,10 +423,15 @@ export function createAvatar(): Avatar {
     head.rotation.z = -state.look.x * 0.05;
     body.rotation.y = state.look.x * 0.12;
 
-    // Irises lead the head.
+    // Irises lead the head, with small saccades.
+    state.saccadeIn -= dt;
+    if (state.saccadeIn <= 0 && !reduced) {
+      state.saccade.set((Math.random() - 0.5) * 0.006, (Math.random() - 0.5) * 0.004);
+      state.saccadeIn = 0.7 + Math.random() * 1.6;
+    }
     eyes.forEach((e) => {
-      e.ir.position.x = THREE.MathUtils.clamp(state.look.x * 0.016, -0.014, 0.014);
-      e.ir.position.y = THREE.MathUtils.clamp(state.look.y * 0.012, -0.012, 0.012);
+      e.ir.position.x = THREE.MathUtils.clamp(state.look.x * 0.016 + state.saccade.x, -0.015, 0.015);
+      e.ir.position.y = THREE.MathUtils.clamp(state.look.y * 0.012 + state.saccade.y, -0.013, 0.013);
     });
 
     if (!reduced) {
@@ -427,23 +439,53 @@ export function createAvatar(): Avatar {
       head.position.y = 0.7 + Math.sin(t * 1.6) * 0.004;
     }
 
-    // Blink
+    // Blink (now and then a double blink)
     state.blinkIn -= dt;
     if (state.blinkIn <= 0) {
       state.blink = 0.16;
-      state.blinkIn = 2 + Math.random() * 3.5;
+      state.blinkIn = Math.random() < 0.2 ? 0.28 : 2 + Math.random() * 3.5;
     }
     let eyeY = 1;
     if (state.blink > 0) {
       state.blink -= dt;
       eyeY = Math.max(0.08, Math.abs(state.blink / 0.08 - 1));
     }
+
+    // Stretch: arms up, lean back, eyes shut, then back to typing.
+    if (!reduced && state.waving <= 0 && state.stretching <= 0) {
+      state.stretchIn -= dt;
+      if (state.stretchIn <= 0) {
+        state.stretching = STRETCH;
+        state.stretchIn = 14 + Math.random() * 10;
+      }
+    }
+    let sk = 0;
+    if (state.stretching > 0) {
+      state.stretching -= dt;
+      const u = 1 - state.stretching / STRETCH; // 0 → 1
+      sk = Math.min(1, u * 3.2, (1 - u) * 3.2);
+      eyeY = Math.min(eyeY, 1 - Math.min(1, Math.max(0, (sk - 0.6) * 2.5)) * 0.92);
+    }
     eyes.forEach((e) => (e.g.scale.y = eyeY));
+    body.rotation.x = -sk * 0.1;
+    head.rotation.x -= sk * 0.18;
 
     // Arms
-    const typing = !reduced && state.waving <= 0;
-    const L = restArm(armL, t, typing);
+    const typing = !reduced && state.waving <= 0 && sk === 0;
+    // A small nod while typing.
+    if (typing) head.rotation.x += Math.sin(t * 5.2) * 0.008;
+    let L = restArm(armL, t, typing);
     let Rp = restArm(armR, t, typing);
+    if (sk > 0) {
+      const up = (arm: Arm, p: ArmPose): ArmPose => ({
+        sx: THREE.MathUtils.lerp(p.sx, -0.15, sk),
+        sz: THREE.MathUtils.lerp(p.sz, 2.75 * arm.side, sk),
+        ex: THREE.MathUtils.lerp(p.ex, -0.1, sk),
+        ez: THREE.MathUtils.lerp(p.ez, 0.55 * arm.side, sk),
+      });
+      L = up(armL, L);
+      Rp = up(armR, Rp);
+    }
     if (state.waving > 0) {
       state.waving -= dt;
       const k = Math.min(1, state.waving * 3, (1.9 - state.waving) * 4);
@@ -465,7 +507,7 @@ export function createAvatar(): Avatar {
     applyArm(armR, Rp);
 
     // Expression: brows lift and the smile opens into a grin.
-    const happyTarget = Math.max(state.waving > 0 ? 1 : 0, state.hover * 0.7);
+    const happyTarget = Math.max(state.waving > 0 ? 1 : 0, state.hover * 0.7, sk * 0.5);
     state.happy = damp(state.happy, happyTarget, 10, dt);
     brows.forEach((b) => (b.position.y = 0.33 + state.happy * 0.022));
     smile.scale.set(1 + state.happy * 0.25, 1 + state.happy * 0.3, 1);
@@ -477,6 +519,7 @@ export function createAvatar(): Avatar {
   }
 
   function wave() {
+    state.stretching = 0;
     state.waving = 1.9;
   }
 

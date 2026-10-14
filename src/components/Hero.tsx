@@ -79,13 +79,13 @@ export default function Hero() {
             <strong>{person.role}.</strong> {person.headline}
           </p>
           <div className="hero__actions">
-            <a className="btn btn--primary" href={`./${person.resume}`} download>
+            <a className="btn btn--primary" href={`./${person.resume}`} download data-magnetic>
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M5 19.5h14" />
               </svg>
               Download resume
             </a>
-            <a className="btn" href="#contact">
+            <a className="btn" href="#contact" data-magnetic>
               Contact me
             </a>
             <CopyButton text={person.email} className="hero__copy-email" />

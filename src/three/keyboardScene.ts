@@ -1,15 +1,19 @@
 // The skills keyboard: every keycap is a skill. Hover or tap to press one,
 // type on your real keyboard to press the matching cap, or hit the space
-// bar to send a wave across the board.
+// bar to send a wave across the board. Keys move on springs, a press sends
+// a small ripple through the neighbouring keys, and a cobalt light follows
+// the selected key so it glows on the caps around it.
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
-import { createStage, damp, prefersReducedMotion, isCoarsePointer } from "./stage";
+import { createStage, damp, prefersReducedMotion } from "./stage";
 import type { SceneHandle } from "./stage";
-import { makeKeyLegend } from "./textures";
+import { makeContactShadow, makeKeyLegend } from "./textures";
+import { spring, stepSpring, type Spring } from "../lib/math";
 import { C } from "./palette";
 
 const U = 0.92; // one key unit
 const GAP = 0.08;
+const TRAVEL = 0.14; // how far a pressed key sinks
 
 const TONES: Record<string, { cap: string; text: string }> = {
   ink: { cap: C.ink, text: C.paperHi },
@@ -34,8 +38,13 @@ interface Key {
   s: KeyDef;
   g: THREE.Group;
   cap: THREE.Mesh<RoundedBoxGeometry, THREE.MeshStandardMaterial>;
-  press: number;
-  wave: number;
+  /** Vertical travel, 0 = up, 1 = fully pressed. */
+  y: Spring;
+  /** Seconds until this key's part of a ripple or wave starts; < 0 idle. */
+  delay: number;
+  /** Strength of the pending ripple/wave lift (negative dips, positive lifts). */
+  kick: number;
+  glow: number;
   home: THREE.Vector3;
 }
 
@@ -49,7 +58,6 @@ export function createKeyboardScene(
   { skills, onKey }: { skills: KeySkill[]; onKey?: (index: number) => void }
 ): KeyboardScene {
   const reduced = prefersReducedMotion();
-  const coarse = isCoarsePointer();
   let rowUnits = 8;
   let camDist = 10;
   let ready = false;
@@ -68,31 +76,26 @@ export function createKeyboardScene(
   });
   const { scene, camera, renderer, pointer } = stage;
 
-  scene.add(new THREE.HemisphereLight(C.paperHi, C.mist, 0.75));
-  const key = new THREE.DirectionalLight("#ffffff", 2.3);
+  scene.add(new THREE.HemisphereLight(C.paperHi, C.mist, 0.8));
+  const key = new THREE.DirectionalLight("#ffffff", 2.2);
   key.position.set(-3, 8, 4);
-  key.castShadow = true;
-  key.shadow.mapSize.set(coarse ? 1024 : 2048, coarse ? 1024 : 2048);
-  Object.assign(key.shadow.camera, { left: -6, right: 6, top: 6, bottom: -6 });
-  key.shadow.radius = 4;
   scene.add(key);
   const rim = new THREE.DirectionalLight(C.cobaltSoft, 1.0);
   rim.position.set(5, 2, -5);
   scene.add(rim);
+  // Follows the selected key and lights the caps around it.
+  const glowLight = new THREE.PointLight(C.cobalt, 0, 3.2, 1.6);
+  glowLight.position.set(0, 0.6, 0);
 
   const board = new THREE.Group();
+  board.add(glowLight);
   scene.add(board);
-  const caseMat = new THREE.MeshStandardMaterial({ color: C.ink, roughness: 0.45, metalness: 0.1 });
+  const caseMat = new THREE.MeshPhysicalMaterial({ color: C.ink, roughness: 0.38, metalness: 0.1, clearcoat: 0.6, clearcoatRoughness: 0.4 });
   let plate: THREE.Mesh | null = null;
 
-  const shadowFloor = new THREE.Mesh(
-    new THREE.PlaneGeometry(40, 40),
-    new THREE.ShadowMaterial({ color: C.ink, opacity: 0.16 })
-  );
-  shadowFloor.rotation.x = -Math.PI / 2;
-  shadowFloor.position.y = -0.42;
-  shadowFloor.receiveShadow = true;
-  scene.add(shadowFloor);
+  const shadow = makeContactShadow(0.42);
+  shadow.position.y = -0.41;
+  board.add(shadow);
 
   /* Keys ------------------------------------------------------------- */
   const geoCache = new Map<string, RoundedBoxGeometry>();
@@ -112,10 +115,15 @@ export function createKeyboardScene(
     const g = new THREE.Group();
     const cap = new THREE.Mesh(
       capGeo(s.w),
-      new THREE.MeshStandardMaterial({ color: tone.cap, roughness: 0.42 })
+      // Standard (not physical) material: two dozen caps, so keep the
+      // shader cheap; the studio environment still gives them a sheen.
+      new THREE.MeshStandardMaterial({
+        color: tone.cap,
+        roughness: 0.36,
+        emissive: new THREE.Color(C.cobalt),
+        emissiveIntensity: 0,
+      })
     );
-    cap.castShadow = true;
-    cap.receiveShadow = true;
     cap.userData.key = s;
     g.add(cap);
     if (s.label) {
@@ -133,12 +141,12 @@ export function createKeyboardScene(
       g.add(legend);
     }
     board.add(g);
-    return { s, g, cap, press: 0, wave: 0, home: new THREE.Vector3() };
+    return { s, g, cap, y: spring(0), delay: -1, kick: 0, glow: 0, home: new THREE.Vector3() };
   });
   const caps = keys.map((k) => k.cap);
 
-  // Flow the keys into rows of `rowUnits`, stretching the last key of each
-  // row so every row ends flush, like a real keyboard.
+  // Flow the keys into rows of `rowUnits`, centring each row, like a
+  // compact keyboard.
   function layoutKeys() {
     const rows: { k: Key; w: number }[][] = [];
     let row: { k: Key; w: number }[] = [];
@@ -158,9 +166,7 @@ export function createKeyboardScene(
     const depth = rows.length * U;
     rows.forEach((r, ri) => {
       const total = r.reduce((a, b) => a + b.w, 0);
-      const extra = rowUnits - total;
-      // Spread leftover width across the row's keys by offsetting.
-      let x = -(rowUnits * U) / 2 + (extra * U) / 2;
+      let x = -(rowUnits * U) / 2 + ((rowUnits - total) * U) / 2;
       r.forEach(({ k, w }) => {
         k.home.set(x + (w * U) / 2, 0, -depth / 2 + ri * U + U / 2);
         x += w * U;
@@ -171,14 +177,10 @@ export function createKeyboardScene(
       board.remove(plate);
       plate.geometry.dispose();
     }
-    plate = new THREE.Mesh(
-      new RoundedBoxGeometry(rowUnits * U + 0.5, 0.36, depth + 0.5, 4, 0.16),
-      caseMat
-    );
+    plate = new THREE.Mesh(new RoundedBoxGeometry(rowUnits * U + 0.5, 0.36, depth + 0.5, 4, 0.16), caseMat);
     plate.position.y = -0.22;
-    plate.castShadow = true;
-    plate.receiveShadow = true;
     board.add(plate);
+    shadow.scale.set(rowUnits * U * 1.45, depth * 1.7, 1);
   }
   layoutKeys();
   ready = true;
@@ -197,10 +199,30 @@ export function createKeyboardScene(
     const k = hovered || selected;
     onKey?.(k && k.s.index >= 0 ? k.s.index : -1);
   };
+
+  /** Neighbours dip a little after a press, spreading outward. */
+  const ripple = (from: Key) => {
+    if (reduced) return;
+    from.y.v += 9; // a sharp extra kick on the key itself
+    keys.forEach((k) => {
+      if (k === from) return;
+      const d = Math.hypot(k.home.x - from.home.x, k.home.z - from.home.z);
+      if (d > 2.6) return;
+      k.delay = d * 0.045;
+      k.kick = 3.2 * (1 - d / 2.6);
+    });
+  };
+  /** Space bar: every key lifts in turn, sweeping out from the origin. */
   const triggerWave = (originX = 0) => {
     keys.forEach((k) => {
-      k.wave = -Math.abs(k.home.x - originX) * 0.08 - Math.abs(k.home.z) * 0.05;
+      k.delay = Math.abs(k.home.x - originX) * 0.07 + Math.abs(k.home.z) * 0.04;
+      k.kick = reduced ? 0 : -7;
     });
+  };
+  const select = (k: Key | null) => {
+    selected = k;
+    if (k) ripple(k);
+    notify();
   };
 
   const onMove = (e: PointerEvent) => {
@@ -208,6 +230,7 @@ export function createKeyboardScene(
     const k = pickKey(e.clientX, e.clientY);
     if (k !== hovered) {
       hovered = k;
+      if (k && !reduced) k.y.v += 3;
       notify();
     }
     el.style.cursor = k ? "pointer" : "default";
@@ -224,11 +247,11 @@ export function createKeyboardScene(
     const k = pickKey(e.clientX, e.clientY);
     if (!k) return;
     if (k.s.space) {
+      k.y.v += 9;
       triggerWave(k.home.x);
       return;
     }
-    selected = k === selected ? null : k;
-    notify();
+    select(k === selected ? null : k);
   };
   const onLeave = () => {
     hovered = null;
@@ -261,40 +284,48 @@ export function createKeyboardScene(
     const matches = keys.filter((k) => !k.s.space && k.s.label.toLowerCase().startsWith(ch));
     if (!matches.length) return;
     cycle[ch] = ((cycle[ch] ?? -1) + 1) % matches.length;
-    const hit = matches[cycle[ch]];
-    selected = hit;
-    hit.press = 1.4; // a deeper, springy press
-    notify();
+    select(matches[cycle[ch]]);
   };
   window.addEventListener("keydown", onKeyDown);
 
   /* Frame ------------------------------------------------------------ */
+  const tiltX = spring(0);
+  const tiltZ = spring(0);
+  const glowPos = new THREE.Vector3();
+
   function frame(dt: number, t: number) {
     camera.position.set(pointer.sx * 0.6, camDist * 0.72, camDist * 0.7);
     camera.lookAt(0, -0.2, 0.25);
-    board.rotation.x = -pointer.sy * 0.08;
-    board.rotation.z = -pointer.sx * 0.05;
+    board.rotation.x = stepSpring(tiltX, -pointer.sy * 0.08, 60, 12, dt);
+    board.rotation.z = stepSpring(tiltZ, -pointer.sx * 0.05, 60, 12, dt);
     board.rotation.y = reduced ? 0 : Math.sin(t * 0.3) * 0.02;
 
     keys.forEach((k) => {
-      const down = k === hovered || k === selected ? 1 : 0;
-      k.press = damp(k.press, down, k.press > 1 ? 6 : 16, dt);
-      let lift = 0;
-      if (k.wave < 1.2) {
-        k.wave += dt * 2.4;
-        if (k.wave > 0 && k.wave < 1) lift = Math.sin(k.wave * Math.PI) * 0.35;
+      // Pending ripple or wave: once its delay runs out, kick the spring.
+      if (k.delay >= 0) {
+        k.delay -= dt;
+        if (k.delay < 0) {
+          k.y.v += k.kick;
+          k.kick = 0;
+        }
       }
-      k.g.position.set(k.home.x, -Math.min(k.press, 1.2) * 0.14 + lift, k.home.z);
-      const target = k === selected ? 1 : 0;
-      k.cap.material.emissive.set(C.cobalt);
-      k.cap.material.emissiveIntensity = damp(k.cap.material.emissiveIntensity, target * 0.35, 10, dt);
+      const down = k === hovered || k === selected ? 1 : 0;
+      const y = stepSpring(k.y, down, reduced ? 400 : 260, reduced ? 40 : 17, dt);
+      k.g.position.set(k.home.x, -y * TRAVEL, k.home.z);
+      k.glow = damp(k.glow, k === selected ? 1 : k === hovered ? 0.35 : 0, 12, dt);
+      k.cap.material.emissiveIntensity = k.glow * 0.4;
     });
+
+    // The glow light glides to the selected key.
+    const focus = selected ?? hovered;
+    if (focus) glowPos.set(focus.home.x, 0.55, focus.home.z);
+    glowLight.position.lerp(glowPos, 1 - Math.exp(-14 * dt));
+    glowLight.intensity = damp(glowLight.intensity, selected ? 3.2 : hovered ? 1.2 : 0, 10, dt);
   }
 
   return {
     pressIndex(i: number) {
-      selected = keys.find((k) => k.s.index === i) || null;
-      notify();
+      select(keys.find((k) => k.s.index === i) || null);
     },
     wave: () => triggerWave(0),
     dispose() {

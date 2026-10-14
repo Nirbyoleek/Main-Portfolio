@@ -23,12 +23,30 @@ Mobile: touch works everywhere (tap layers, keys and screens; swipe the turntabl
 layouts reflow, and WebGL pixel ratio is capped on touch devices. Respects
 `prefers-reduced-motion`.
 
+## Motion
+
+- **3D:** keys, screens, layers and the camera move on damped springs, so they
+  overshoot slightly and settle. Pressing a key sends a ripple through its
+  neighbours and a light follows it; the turntable keeps the momentum of a flick;
+  a lifted layer gets a sweep of light; the avatar blinks, glances around,
+  stretches now and then, and turns to watch the stack collapse as you scroll.
+- **Page:** the hero intro is one staggered sequence; section titles open from
+  condensed to full width; stats count up; result bars grow; the timeline draws
+  as you scroll; project details slide in from the side you moved toward; the
+  nav's active pill glides between links; main buttons lean toward the cursor.
+- **Respectful:** all of it switches off under `prefers-reduced-motion`, and no
+  content is hidden before JavaScript runs.
+
 ## Performance
 
 - **The hero is static HTML.** The build writes the name, headline, stats and resume
   button into `index.html` (`src/lib/shell.ts`), so they paint before any JavaScript runs.
 - **three.js loads later, as its own chunk.** Each 3D scene is a dynamic `import()`,
   started after the first paint (hero) or when its section nears the viewport.
+- **No shadow maps.** Soft shadows are textured decals, which look softer and cost
+  far less than extra render passes.
+- **Adaptive resolution.** If frames slow down, the 3D renders fewer pixels; when
+  they speed up again it steps back up.
 - **Light devices get a static version.** Data-saver mode, 2G, very low memory, no
   WebGL, or `?lite` in the URL skip three.js entirely and show a still of the avatar
   and flat project screens instead.

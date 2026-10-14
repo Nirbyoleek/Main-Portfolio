@@ -16,6 +16,8 @@ export default function Nav() {
   const [active, setActive] = useState("");
   const [palette, setPalette] = useState(false);
   const bar = useRef<HTMLSpanElement | null>(null);
+  const listRef = useRef<HTMLUListElement | null>(null);
+  const pillRef = useRef<HTMLLIElement | null>(null);
   const closePalette = useCallback(() => setPalette(false), []);
   const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 
@@ -56,6 +58,26 @@ export default function Nav() {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
+  // A pill slides under the active link instead of jumping between links.
+  useEffect(() => {
+    const list = listRef.current;
+    const pill = pillRef.current;
+    if (!list || !pill) return;
+    const place = () => {
+      const a = active ? list.querySelector<HTMLAnchorElement>(`a[href="${active}"]`) : null;
+      if (!a) {
+        pill.style.opacity = "0";
+        return;
+      }
+      pill.style.opacity = "1";
+      pill.style.width = `${a.offsetWidth}px`;
+      pill.style.transform = `translateX(${a.offsetLeft}px)`;
+    };
+    place();
+    window.addEventListener("resize", place);
+    return () => window.removeEventListener("resize", place);
+  }, [active]);
+
   return (
     <>
       <header className={`nav ${solid ? "nav--solid" : ""} ${open ? "nav--open" : ""}`}>
@@ -67,7 +89,8 @@ export default function Nav() {
           <small>{person.role}</small>
         </span>
         <nav aria-label="Sections">
-          <ul className="nav__links" id="nav-links">
+          <ul className="nav__links" id="nav-links" ref={listRef}>
+            <li className="nav__pill" ref={pillRef} aria-hidden="true" />
             {links.map((l) => (
               <li key={l.href}>
                 <a
