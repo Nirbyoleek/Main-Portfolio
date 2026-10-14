@@ -1426,7 +1426,8 @@ dd {
   background: var(--ink);
   color: var(--paper-hi);
 }
-.projects__status--live {
+.projects__status--live,
+.projects__status--livedemo {
   background: var(--green);
 }
 .projects__status--inprogress {
@@ -1525,6 +1526,13 @@ dd {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+.project__link-note {
+  flex-basis: 100%;
+  order: 3;
+  font-size: 0.88rem;
+  color: var(--mist);
+  max-width: 46ch;
 }
 .project__private {
   font-weight: 600;

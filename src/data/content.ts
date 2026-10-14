@@ -67,6 +67,8 @@ export interface Project {
   repo?: string;
   /** Shown when there is no link or repo. */
   note?: string;
+  /** Shown under the links, e.g. a cold-start warning. */
+  linkNote?: string;
 }
 export interface Skill {
   label: string;
@@ -266,7 +268,7 @@ export const projects: Project[] = [
     name: "Order Matching Engine",
     client: "Personal project",
     type: "personal",
-    status: "Complete",
+    status: "Live demo",
     mock: "book",
     role: "Solo: engine, server, benchmarks and trading UI",
     summary:
@@ -279,9 +281,9 @@ export const projects: Project[] = [
     ],
     result: "20k orders/s, p99 < 2 ms",
     stack: ["TypeScript", "Node.js", "WebSockets", "React", "Event sourcing"],
-    // Add the public demo URL as `link` and/or the repo URL as `repo`
-    // (only once the repository is public, or visitors get a 404).
-    note: "Source code available on request.",
+    link: "https://matching-engine-demo.onrender.com/",
+    // Add the repo URL as `repo` once the repository is public.
+    linkNote: "Runs on a free server: the first visit can take about a minute to wake it. Source code available on request.",
   },
 ];
 

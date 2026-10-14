@@ -125,6 +125,7 @@ export default function Projects() {
                 {p.note || "Client code is private. Happy to walk through it in an interview."}
               </span>
             )}
+            {p.linkNote && (p.link || p.repo) && <p className="project__link-note">{p.linkNote}</p>}
             <div className="stepper">
               <button className="icon-btn" onClick={() => step(-1)} aria-label="Previous project">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
