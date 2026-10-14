@@ -15,7 +15,6 @@ export default function About() {
     { k: "Core stack", v: "React, TypeScript, Node.js, Express, REST, MongoDB" },
     { k: "Education", v: `${education.degree}, ${education.short}, GPA ${education.gpa}` },
     { k: "Location", v: person.location },
-    ...(person.openTo ? [{ k: "Open to", v: person.openTo, hi: true }] : []),
   ];
 
   return (
@@ -46,7 +45,7 @@ export default function About() {
           </div>
           <dl>
             {glance.map((g) => (
-              <div key={g.k} className={g.hi ? "is-hi" : ""}>
+              <div key={g.k}>
                 <dt>{g.k}</dt>
                 <dd>{g.v}</dd>
               </div>

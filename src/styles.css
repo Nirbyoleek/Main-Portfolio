@@ -656,10 +656,6 @@ dd {
   font-size: 0.9rem;
   font-weight: 650;
 }
-.hero__status li.is-open {
-  background: var(--yellow);
-  border-color: var(--yellow);
-}
 .dot {
   width: 9px;
   height: 9px;
@@ -1090,12 +1086,6 @@ dd {
 }
 .glance dd {
   font-weight: 600;
-}
-.glance .is-hi dd {
-  background: var(--yellow);
-  justify-self: start;
-  padding: 0 8px;
-  border-radius: 6px;
 }
 
 .strengths {

@@ -69,7 +69,6 @@ export default function Hero() {
               <span className="dot" aria-hidden="true" />
               {person.current.title}, {person.current.company}
             </li>
-            {person.openTo && <li className="is-open">Open to {person.openTo}</li>}
           </ul>
           <h1 className="hero__name">
             <span>{person.firstName}</span>

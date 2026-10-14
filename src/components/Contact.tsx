@@ -71,12 +71,6 @@ export default function Contact() {
               <dt>Based in</dt>
               <dd>{person.location}</dd>
             </div>
-            {person.openTo && (
-              <div>
-                <dt>Open to</dt>
-                <dd>{person.openTo}</dd>
-              </div>
-            )}
           </dl>
           <ul className="contact__links">
             <li>

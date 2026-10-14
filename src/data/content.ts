@@ -7,7 +7,6 @@ export interface Person {
   role: string;
   headline: string;
   current: { title: string; company: string };
-  openTo: string;
   location: string;
   email: string;
   phone: string;
@@ -89,8 +88,6 @@ export const person: Person = {
   headline:
     "I build production web apps end to end for enterprise teams, from API design and data model to the interface and the release.",
   current: { title: "Application Engineer", company: "Tiger Analytics" },
-  // Shown in the hero and the at-a-glance card. Set to "" to hide it.
-  openTo: "SDE 2 and senior frontend roles",
   location: "India",
   email: "nirbyoleek152001@gmail.com",
   phone: "+91 79080 94747",

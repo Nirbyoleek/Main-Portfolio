@@ -11,12 +11,12 @@ code: no model files, no paid tools.
 
 | Where | Interaction |
 | --- | --- |
-| Hero | Name, current role, open-to roles, headline stats and one-click resume. A 3D avatar of me (glasses, hoodie, headphones) follows the cursor with eyes and head, types, glances at the laptop when you stop moving, and waves and talks when clicked. The layers of my work float above the desk: hover one to read it, drag to spin, scroll to snap them into one screen. |
+| Hero | Name, current role, headline stats and one-click resume. A 3D avatar of me (glasses, hoodie, headphones) follows the cursor with eyes and head, types, glances at the laptop when you stop moving, and waves and talks when clicked. The layers of my work float above the desk: hover one to read it, drag to spin, scroll to snap them into one screen. |
 | About me | Story, an at-a-glance card for recruiters, three strengths backed by evidence, and measured results drawn as before/after bars. |
 | Experience | Timeline with computed durations and total experience, a career strip since 2021, clients and tech per role. |
 | Projects | A 3D turntable of project screens with filters (all, client, personal), my role, highlights, stack and live links. |
 | Skills | A 3D keyboard where every keycap is a skill (type a letter to press it), plus a matrix of where each skill was used. |
-| Contact | Email with copy button, phone, open-to roles, LinkedIn, GitHub, resume and an EmailJS form. |
+| Contact | Email with copy button, phone, LinkedIn, GitHub, resume and an EmailJS form. |
 | Anywhere | Press Ctrl+K (⌘K on Mac) for quick actions: resume, copy email, jump to a section. |
 
 Mobile: touch works everywhere (tap layers, keys and screens; swipe the turntable),
@@ -79,7 +79,7 @@ npm run check     # all three, as CI runs them
 
 Everything written on the site lives in **`src/data/content.js`**: headline, stats,
 strengths, results, experience (durations are computed from the dates), projects,
-skills and the avatar's lines. Set `openTo` to `""` to hide the open-to-roles badge. The resume served
+skills and the avatar's lines. The resume served
 by the "Resume" buttons is `public/Nirbyoleek-Das-Resume.pdf`.
 
 EmailJS IDs are at the top of `src/components/Contact.jsx`.
