@@ -123,12 +123,12 @@ export function createHeroScene(container, opts) {
       return {
         cam: new THREE.Vector3(0, 2.4, 11.6),
         camNear: new THREE.Vector3(0, 2.0, 10.6),
-        target: new THREE.Vector3(0, 0.45, 0),
-        stack: new THREE.Vector3(0, 0.55, 0),
-        stackScale: 0.68,
-        avatar: new THREE.Vector3(0.25, -1.55, 0.6),
-        avatarRot: -0.2,
-        avatarScale: 0.78,
+        target: new THREE.Vector3(0, 0.2, 0),
+        stack: new THREE.Vector3(0.9, 0.55, -1.4),
+        stackScale: 0.46,
+        avatar: new THREE.Vector3(0.2, -1.05, 0.9),
+        avatarRot: -0.12,
+        avatarScale: 1.0,
       };
     }
     if (aspect < 1.25) {
@@ -143,16 +143,17 @@ export function createHeroScene(container, opts) {
         avatarScale: 1,
       };
     }
-    // Wide screens: everything sits right of centre, text on the left.
+    // Wide screens: the avatar is the subject on the right, with the
+    // layers of its work floating above-left of the desk. Text on the left.
     return {
-      cam: new THREE.Vector3(-0.6, 3.0, 10.2),
-      camNear: new THREE.Vector3(-0.2, 2.2, 9.1),
-      target: new THREE.Vector3(-0.6, 0.65, 0),
-      stack: new THREE.Vector3(0.75, 1.05, 0),
-      stackScale: 1,
-      avatar: new THREE.Vector3(2.85, -0.55, 0.7),
-      avatarRot: -0.6,
-      avatarScale: 0.9,
+      cam: new THREE.Vector3(-0.4, 2.7, 10.2),
+      camNear: new THREE.Vector3(0.2, 2.1, 9.0),
+      target: new THREE.Vector3(-0.7, 0.75, 0),
+      stack: new THREE.Vector3(0.7, 1.6, -1.0),
+      stackScale: 0.78,
+      avatar: new THREE.Vector3(2.35, -0.7, 0.8),
+      avatarRot: -0.42,
+      avatarScale: 1.18,
     };
   }
   layout = layout || computeLayout(camera.aspect);

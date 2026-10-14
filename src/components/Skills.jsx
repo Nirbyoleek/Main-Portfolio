@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { skills } from "../data/content.js";
+import { skills, skillGroups, fundamentals } from "../data/content.js";
 import { useScene } from "../hooks.js";
 import { createKeyboardScene } from "../three/keyboardScene.js";
 
@@ -22,11 +22,11 @@ export default function Skills() {
             </>
           ) : (
             <>
-              <strong>Every key is a skill</strong>
+              <strong>My working toolkit</strong>
               <p>
                 {state === "unsupported"
-                  ? "Pick a skill from the list below."
-                  : "Hover or tap a key. On a keyboard, type a letter to press the matching key, or hit space for a wave."}
+                  ? "The full list is below."
+                  : "Press a key to see where I've used it. Type a letter to jump to a skill, or hit space."}
               </p>
             </>
           )}
@@ -36,22 +36,41 @@ export default function Skills() {
       <div className={`skills__canvas ${state === "unsupported" ? "is-flat" : ""}`} ref={ref} />
 
       <div className="wrap">
-        <ul className="skill-list" aria-label="All skills">
-          {skills.map((k, i) => (
-            <li key={k.label}>
-              <button
-                className={i === active ? "is-active" : ""}
-                aria-pressed={i === active}
-                onClick={() => {
-                  setActive(i);
-                  scene.current?.pressIndex(i);
-                }}
-              >
-                {k.label}
-              </button>
-            </li>
+        <div className="matrix">
+          {skillGroups.map((g) => (
+            <div className="matrix__group" key={g.name}>
+              <h3>{g.name}</h3>
+              <ul>
+                {g.items.map((it) => {
+                  const k = skills.findIndex((x) => it.name.toLowerCase().startsWith(x.label.toLowerCase().split(" ")[0]));
+                  return (
+                    <li key={it.name} className={it.core ? "is-core" : ""}>
+                      {k >= 0 ? (
+                        <button
+                          type="button"
+                          className={k === active ? "is-active" : ""}
+                          onClick={() => {
+                            setActive(k);
+                            scene.current?.pressIndex(k);
+                          }}
+                        >
+                          {it.name}
+                          {it.core && <span className="matrix__core">Core</span>}
+                        </button>
+                      ) : (
+                        <span className="matrix__name">{it.name}</span>
+                      )}
+                      <span className="matrix__where">{it.where.length ? it.where.join(", ") : "Toolkit"}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           ))}
-        </ul>
+        </div>
+        <p className="fundamentals">
+          <strong>Fundamentals:</strong> {fundamentals.join(", ")}.
+        </p>
       </div>
     </section>
   );

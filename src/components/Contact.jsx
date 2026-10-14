@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { person } from "../data/content.js";
+import CopyButton from "./CopyButton.jsx";
 
 // EmailJS (free tier) delivers the form to Nirbyoleek's inbox without a
 // backend. These IDs are public by design; change them in one place here.
@@ -46,11 +47,34 @@ export default function Contact() {
           <h2 id="contact-title" className="kicker">
             Contact
           </h2>
-          <p className="contact__lead">Have a role or a product that needs building? Write to me.</p>
-          <a className="contact__email" href={`mailto:${person.email}`}>
-            {person.email.split("@")[0]}
-            <wbr />@{person.email.split("@")[1]}
-          </a>
+          <p className="contact__lead">
+            Hiring for a frontend or full-stack role? Email or call me, or use the form.
+          </p>
+          <div className="contact__email-row">
+            <a className="contact__email" href={`mailto:${person.email}`}>
+              {person.email.split("@")[0]}
+              <wbr />@{person.email.split("@")[1]}
+            </a>
+            <CopyButton text={person.email} className="copy-btn--light" />
+          </div>
+          <dl className="contact__facts">
+            <div>
+              <dt>Phone</dt>
+              <dd>
+                <a href={`tel:${person.phone.replace(/\s/g, "")}`}>{person.phone}</a>
+              </dd>
+            </div>
+            <div>
+              <dt>Based in</dt>
+              <dd>{person.location}</dd>
+            </div>
+            {person.openTo && (
+              <div>
+                <dt>Open to</dt>
+                <dd>{person.openTo}</dd>
+              </div>
+            )}
+          </dl>
           <ul className="contact__links">
             <li>
               <a href={person.links.linkedin} target="_blank" rel="noreferrer">
@@ -96,7 +120,7 @@ export default function Contact() {
 
       <footer className="footer wrap">
         <p>© {new Date().getFullYear()} Nirbyoleek Das</p>
-        <p>Built with React and three.js. Every 3D object on this page is code, no model files.</p>
+        <p>Designed and built by me with React and three.js. Updated {person.updated}.</p>
         <a href="#top">Back to top</a>
       </footer>
     </section>

@@ -1,7 +1,8 @@
-import { useCallback, useRef, useState } from "react";
-import { person, layers, avatarLines } from "../data/content.js";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { person, layers, avatarLines, stats } from "../data/content.js";
 import { useScene, useScrollProgress } from "../hooks.js";
 import { createHeroScene } from "../three/heroScene.js";
+import CopyButton from "./CopyButton.jsx";
 
 export default function Hero() {
   const sectionRef = useRef(null);
@@ -16,7 +17,7 @@ export default function Hero() {
     setLine(avatarLines[lineIdx.current % avatarLines.length]);
     lineIdx.current += 1;
     clearTimeout(hideTimer.current);
-    hideTimer.current = setTimeout(() => setLine(null), 3200);
+    hideTimer.current = setTimeout(() => setLine(null), 3600);
   }, []);
 
   const [canvasRef, scene, state] = useScene(
@@ -31,10 +32,14 @@ export default function Hero() {
     { eager: true }
   );
 
-  const pickLayer = (i) => {
-    setLayer(i);
-    scene.current?.highlight(i);
-  };
+  // The avatar introduces itself once the scene is up.
+  useEffect(() => {
+    if (state !== "ready") return;
+    const t = setTimeout(() => {
+      if (window.scrollY < 80) scene.current?.wave();
+    }, 1400);
+    return () => clearTimeout(t);
+  }, [state, scene]);
 
   const current = layer >= 0 ? layers[layer] : null;
 
@@ -47,63 +52,62 @@ export default function Hero() {
         </div>
 
         <div className="hero__copy">
+          <ul className="hero__status">
+            <li>
+              <span className="dot" aria-hidden="true" />
+              {person.current.title}, {person.current.company}
+            </li>
+            {person.openTo && <li className="is-open">Open to {person.openTo}</li>}
+          </ul>
           <h1 className="hero__name">
             <span>{person.firstName}</span>
             <span>{person.lastName}</span>
           </h1>
           <p className="hero__role">
-            {person.role} at Tiger Analytics, building for PepsiCo and Wolters Kluwer in React,
-            TypeScript and Node.js.
+            <strong>{person.role}.</strong> {person.headline}
           </p>
+          <div className="hero__actions">
+            <a className="btn btn--primary" href={`./${person.resume}`} download>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M5 19.5h14" />
+              </svg>
+              Download resume
+            </a>
+            <a className="btn" href="#contact">
+              Contact me
+            </a>
+            <CopyButton text={person.email} className="hero__copy-email" />
+          </div>
+          <dl className="hero__stats">
+            {stats.map((s) => (
+              <div key={s.label}>
+                <dt>{s.label}</dt>
+                <dd>{s.value}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
 
-        <aside className="hero__panel" aria-label="Layer details">
-          <div className="hero__meter" aria-hidden="true">
-            <span className="hero__meter-a">Taken apart</span>
-            <span className="hero__meter-track">
-              <span className="hero__meter-fill" />
-            </span>
-            <span className="hero__meter-b">Put together</span>
-          </div>
-          {current ? (
-            <div className="hero__layer" key={current.key}>
+        <div className={`hero__caption ${current ? "is-on" : ""}`} aria-live="polite">
+          {current && (
+            <>
               <strong>{current.name}</strong>
-              <p>{current.line}</p>
-            </div>
-          ) : (
-            <div className="hero__layer hero__layer--hint">
-              <strong>Five layers, one feature</strong>
-              <p>
-                {state === "unsupported"
-                  ? "Your browser can't show the 3D view, but everything below works."
-                  : "Hover a layer to see what I own there. Drag to spin the stack. Scroll to snap it shut."}
-              </p>
-            </div>
+              <span>{current.line}</span>
+            </>
           )}
-          <ol className="hero__layer-list">
-            {layers.map((l, i) => (
-              <li key={l.key}>
-                <button
-                  className={i === layer ? "is-active" : ""}
-                  aria-pressed={i === layer}
-                  onMouseEnter={() => pickLayer(i)}
-                  onFocus={() => pickLayer(i)}
-                  onClick={() => pickLayer(i === layer ? -1 : i)}
-                >
-                  {l.name}
-                </button>
-              </li>
-            ))}
-          </ol>
-          {state === "ready" && (
-            <button className="link-btn" onClick={() => scene.current?.wave()}>
-              Say hi to the avatar
-            </button>
-          )}
-        </aside>
+        </div>
 
-        <a className="hero__scroll" href="#about">
-          Scroll
+        {state === "ready" && (
+          <p className="hero__hint">
+            <button className="link-btn" onClick={() => scene.current?.wave()}>
+              Say hi
+            </button>{" "}
+            or hover the layers of my work.
+          </p>
+        )}
+
+        <a className="hero__scroll" href="#about" aria-label="Scroll to About">
+          <span />
         </a>
       </div>
     </section>
