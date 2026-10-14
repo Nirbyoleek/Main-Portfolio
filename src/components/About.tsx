@@ -1,4 +1,8 @@
+import type { CSSProperties } from "react";
 import { education, experience, person, strengths, impact } from "../data/content";
+
+/** Inline style that sets the bar width through a CSS custom property. */
+const barWidth = (w: string) => ({ "--w": w }) as CSSProperties;
 import { durationLabel, totalMonths } from "../lib/format";
 
 export default function About() {
@@ -72,10 +76,10 @@ export default function About() {
                   <span className="impact__what">{d.metric}</span>
                 </div>
                 <div className="impact__bars" aria-hidden="true">
-                  <span className="bar bar--before" style={{ "--w": up ? `${(100 / d.after) * 100}%` : "100%" }}>
+                  <span className="bar bar--before" style={barWidth(up ? `${(100 / d.after) * 100}%` : "100%")}>
                     <i>Before</i>
                   </span>
-                  <span className="bar bar--after" style={{ "--w": up ? "100%" : `${d.after}%` }}>
+                  <span className="bar bar--after" style={barWidth(up ? "100%" : `${d.after}%`)}>
                     <i>After</i>
                   </span>
                 </div>
