@@ -1484,6 +1484,11 @@ dd {
   border-color: var(--yellow);
   color: var(--ink);
 }
+.project__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
 .project__private {
   font-weight: 600;
   color: var(--mist);

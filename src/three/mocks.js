@@ -396,18 +396,62 @@ const projectMocks = {
     text(ctx, "Priya is typing…", 320, 600, 22, C.inkSoft, 500);
     fillRR(ctx, 320, 620, 640, 56, 28, C.paper);
   },
-  twitter(ctx) {
-    browserChrome(ctx, "feed / home");
-    for (let i = 0; i < 4; i++) {
-      const y = 96 + i * 150;
-      fillRR(ctx, 120, y, 784, 134, 20, i === 0 ? C.paper : C.paperHi);
-      strokeRR(ctx, 120, y, 784, 134, 20, C.mist, 2);
-      fillRR(ctx, 146, y + 24, 60, 60, 30, [C.cobalt, C.yellow, C.ink, C.cobaltSoft][i]);
-      bar(ctx, 230, y + 30, 180, 16, C.ink);
-      bar(ctx, 230, y + 62, 560, 12, C.mist);
-      bar(ctx, 230, y + 84, 420, 12, C.mist);
-      [0, 1, 2].forEach((k) => fillRR(ctx, 230 + k * 120, y + 106, 70, 14, 7, k === 2 && i === 1 ? C.red : C.mist));
-    }
+  // Order book ladder, depth bars, tape and a latency readout.
+  book(ctx) {
+    browserChrome(ctx, "matching-engine / book");
+    // Ladder
+    fillRR(ctx, 40, 96, 520, 584, 20, C.paper);
+    text(ctx, "Price", 70, 136, 20, C.inkSoft, 700);
+    text(ctx, "Qty", 520, 136, 20, C.inkSoft, 700, 100, "right");
+    const asks = [
+      [102.5, 120],
+      [102.0, 300],
+      [101.5, 150],
+    ];
+    const bids = [
+      [101.0, 50],
+      [100.5, 250],
+      [100.0, 400],
+      [99.5, 100],
+    ];
+    const maxQ = 400;
+    asks.forEach(([p, q], i) => {
+      const y = 160 + i * 58;
+      ctx.fillStyle = "rgba(240,82,77,0.16)";
+      ctx.fillRect(540 - (q / maxQ) * 460, y, (q / maxQ) * 460, 44);
+      text(ctx, p.toFixed(2), 70, y + 31, 26, C.red, 700);
+      text(ctx, String(q), 520, y + 31, 26, C.ink, 600, 100, "right");
+    });
+    fillRR(ctx, 60, 342, 480, 40, 10, C.ink);
+    text(ctx, "spread 0.50", 300, 369, 20, C.yellow, 700, 100, "center");
+    bids.forEach(([p, q], i) => {
+      const y = 396 + i * 58;
+      ctx.fillStyle = "rgba(31,157,98,0.18)";
+      ctx.fillRect(540 - (q / maxQ) * 460, y, (q / maxQ) * 460, 44);
+      text(ctx, p.toFixed(2), 70, y + 31, 26, C.green, 700);
+      text(ctx, String(q), 520, y + 31, 26, C.ink, 600, 100, "right");
+    });
+    // Engine internals
+    fillRR(ctx, 584, 96, 400, 200, 20, C.ink);
+    text(ctx, "p99", 614, 146, 22, C.mist, 600);
+    text(ctx, "352 µs", 614, 210, 64, C.yellow, 800, 112);
+    text(ctx, "20,000 orders/s", 614, 260, 24, C.paperHi, 600);
+    // Tape
+    fillRR(ctx, 584, 316, 400, 364, 20, C.paperHi);
+    strokeRR(ctx, 584, 316, 400, 364, 20, C.mist, 2);
+    text(ctx, "Tape", 612, 356, 22, C.inkSoft, 700);
+    [
+      ["101.00", "200", C.green],
+      ["101.50", "150", C.green],
+      ["101.00", "75", C.red],
+      ["100.50", "40", C.red],
+      ["101.00", "120", C.green],
+    ].forEach(([p, q, col], i) => {
+      const y = 396 + i * 54;
+      fillRR(ctx, 608, y, 352, 42, 10, i === 0 ? C.paper : C.paperHi);
+      text(ctx, p, 628, y + 29, 22, col, 700);
+      text(ctx, "x " + q, 940, y + 29, 22, C.ink, 600, 100, "right");
+    });
   },
 };
 

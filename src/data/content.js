@@ -183,18 +183,26 @@ export const projects = [
     link: "https://chat-app-ymju.onrender.com",
   },
   {
-    id: "twitter",
-    name: "Twitter Clone",
+    id: "matching-engine",
+    name: "Order Matching Engine",
     client: "Personal project",
     type: "personal",
-    status: "Live",
-    mock: "twitter",
-    role: "Solo, full stack",
-    summary: "Feed, follows and posting on a paginated REST API.",
-    highlights: ["Response caching", "Centralised server-side error handling"],
-    result: "Paginated, cached REST API",
-    stack: ["React", "Node.js", "Express", "MongoDB"],
-    link: "https://twitter-n5yl.onrender.com/",
+    status: "Complete",
+    mock: "book",
+    role: "Solo: engine, server, benchmarks and trading UI",
+    summary:
+      "The core of an exchange: a single-symbol order book with price-time priority, built in TypeScript. A single-threaded, deterministic core is event-sourced, so every command is journalled before it is applied and a crash recovers by replay.",
+    highlights: [
+      "20,000 orders/s over WebSocket with p99 under 2 ms (352 µs at 10,000/s)",
+      "Replays 1,000,000 commands in 0.64 s for crash recovery",
+      "Limit, market, IOC, FOK, cancel and amend, with self-trade prevention and O(1) cancel",
+      "332 tests including property and crash-recovery tests; 7 of 8 pre-set targets met",
+    ],
+    result: "20k orders/s, p99 < 2 ms",
+    stack: ["TypeScript", "Node.js", "WebSockets", "React", "Event sourcing"],
+    // Add the public demo URL as `link` and/or the repo URL as `repo`
+    // (only once the repository is public, or visitors get a 404).
+    note: "Source code available on request.",
   },
 ];
 
@@ -202,7 +210,7 @@ export const projects = [
 // `tone` picks the cap colour, `used` is shown when the key is pressed.
 export const skills = [
   { label: "JavaScript", w: 1.5, tone: "ink", used: "Every role and project since 2021." },
-  { label: "TypeScript", w: 1.5, tone: "cobalt", used: "Both Wolters Kluwer applications." },
+  { label: "TypeScript", w: 1.5, tone: "cobalt", used: "Both Wolters Kluwer applications and my order matching engine." },
   { label: "React", w: 1, tone: "cobalt", used: "Every role: Trakiot, Vakilsearch and Tiger Analytics." },
   { label: "Next.js", w: 1, tone: "paper", used: "Server-rendered side builds and dashboards." },
   { label: "HTML", w: 1, tone: "paper", used: "Semantic, accessible markup: labels, focus order, landmarks." },
@@ -237,7 +245,7 @@ export const skillGroups = [
     name: "Languages",
     items: [
       { name: "JavaScript", where: ["Tiger Analytics", "Vakilsearch", "Trakiot", "Projects"], core: true },
-      { name: "TypeScript", where: ["Tiger Analytics"], core: true },
+      { name: "TypeScript", where: ["Tiger Analytics", "Projects"], core: true },
       { name: "HTML5 and CSS3", where: ["Tiger Analytics", "Vakilsearch", "Trakiot"] },
       { name: "SQL", where: [] },
     ],
@@ -260,7 +268,7 @@ export const skillGroups = [
       { name: "REST API design", where: ["Tiger Analytics", "Projects"], core: true },
       { name: "JWT auth and RBAC", where: ["Tiger Analytics", "Projects"] },
       { name: "MongoDB (Mongoose)", where: ["Projects"] },
-      { name: "Socket.io", where: ["Projects"] },
+      { name: "Socket.io and WebSockets", where: ["Projects"] },
     ],
   },
   {
@@ -268,7 +276,7 @@ export const skillGroups = [
     items: [
       { name: "Git and GitHub", where: ["Tiger Analytics", "Vakilsearch", "Trakiot", "Projects"] },
       { name: "Postman", where: ["Tiger Analytics"] },
-      { name: "Jest", where: [] },
+      { name: "Jest and Vitest", where: ["Projects"] },
       { name: "ESLint and Prettier", where: [] },
       { name: "Vercel, Netlify, Render", where: ["Projects"] },
     ],

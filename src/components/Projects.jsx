@@ -42,8 +42,8 @@ export default function Projects() {
         </h2>
         <div className="projects__side">
           <p className="projects__lead">
-            Three enterprise platforms I've built at Tiger Analytics and two full-stack apps I made on my
-            own. Spin the turntable or use the list.
+            Three enterprise platforms I've built at Tiger Analytics and two systems I built on my own,
+            including an exchange-style matching engine. Spin the turntable or use the list.
           </p>
           <div className="segmented" role="group" aria-label="Filter projects">
             {FILTERS.map((f) => (
@@ -87,12 +87,23 @@ export default function Projects() {
             ))}
           </ul>
           <div className="project__actions">
-            {p.link ? (
-              <a className="btn" href={p.link} target="_blank" rel="noreferrer">
-                Open live app
-              </a>
+            {p.link || p.repo ? (
+              <div className="project__links">
+                {p.link && (
+                  <a className="btn" href={p.link} target="_blank" rel="noreferrer">
+                    Open live app
+                  </a>
+                )}
+                {p.repo && (
+                  <a className="btn" href={p.repo} target="_blank" rel="noreferrer">
+                    View code
+                  </a>
+                )}
+              </div>
             ) : (
-              <span className="project__private">Client code is private. Happy to walk through it in an interview.</span>
+              <span className="project__private">
+                {p.note || "Client code is private. Happy to walk through it in an interview."}
+              </span>
             )}
             <div className="stepper">
               <button className="icon-btn" onClick={() => step(-1)} aria-label="Previous project">
