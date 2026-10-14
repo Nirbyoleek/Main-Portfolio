@@ -1,32 +1,51 @@
-import { useState } from "react";
-import { projects } from "../data/content.js";
-import { useScene } from "../hooks.js";
-import { createProjectsScene } from "../three/projectsScene.js";
+import { useMemo, useState } from "react";
+import { projects } from "../data/content";
+import { useScene } from "../hooks";
+import { drawProject } from "../lib/drawings";
 
-const FILTERS = [
+type Filter = "all" | "client" | "personal";
+
+const FILTERS: { id: Filter; label: string }[] = [
   { id: "all", label: "All" },
   { id: "client", label: "Client" },
   { id: "personal", label: "Personal" },
 ];
 
+/** The project's screen as a flat image, for the static version and while 3D loads. */
+function ProjectStill({ mock, name }: { mock: string; name: string }) {
+  const src = useMemo(() => {
+    try {
+      return drawProject(mock).toDataURL("image/png");
+    } catch {
+      return "";
+    }
+  }, [mock]);
+  if (!src) return null;
+  return <img className="projects__still" src={src} alt={`Interface of ${name}`} width="1024" height="720" />;
+}
+
 export default function Projects() {
   const [index, setIndex] = useState(0);
-  const [filter, setFilter] = useState("all");
-  const [ref, scene, state] = useScene((el) => createProjectsScene(el, { projects, onSelect: setIndex }));
+  const [filter, setFilter] = useState<Filter>("all");
+  const [ref, scene, state] = useScene(() =>
+    import("../three/projectsScene").then(({ createProjectsScene }) => (el: HTMLElement) =>
+      createProjectsScene(el, { projects, onSelect: setIndex })
+    )
+  );
   const p = projects[index];
 
   const visible = projects.map((x, i) => ({ ...x, i })).filter((x) => filter === "all" || x.type === filter);
 
-  const select = (i) => {
+  const select = (i: number) => {
     setIndex(i);
     scene.current?.setIndex(i, false);
   };
-  const step = (dir) => {
+  const step = (dir: number) => {
     const pos = visible.findIndex((x) => x.i === index);
     const next = visible[(((pos < 0 ? 0 : pos) + dir) % visible.length + visible.length) % visible.length];
     select(next.i);
   };
-  const pickFilter = (f) => {
+  const pickFilter = (f: Filter) => {
     setFilter(f);
     const first = projects.findIndex((x) => f === "all" || x.type === f);
     if (first >= 0 && f !== "all" && projects[index].type !== f) select(first);
@@ -57,7 +76,8 @@ export default function Projects() {
       </div>
 
       <div className="projects__grid wrap">
-        <div className={`projects__canvas ${state === "unsupported" ? "is-flat" : ""}`} ref={ref}>
+        <div className={`projects__canvas ${state === "lite" ? "is-lite" : ""} ${state === "ready" ? "is-ready" : ""}`} ref={ref}>
+          {state !== "ready" && <ProjectStill mock={p.mock} name={p.name} />}
           <span className={`projects__status projects__status--${p.status.replace(/\s/g, "").toLowerCase()}`}>
             {p.status}
           </span>

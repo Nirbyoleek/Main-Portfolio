@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { person } from "../data/content.js";
-import CopyButton from "./CopyButton.jsx";
+import { useState, type FormEvent } from "react";
+import { person } from "../data/content";
+import CopyButton from "./CopyButton";
 
 // EmailJS (free tier) delivers the form to Nirbyoleek's inbox without a
 // backend. These IDs are public by design; change them in one place here.
@@ -11,9 +11,12 @@ const EMAILJS = {
 };
 
 export default function Contact() {
-  const [status, setStatus] = useState({ kind: "idle", text: "" });
+  const [status, setStatus] = useState<{ kind: "idle" | "sending" | "sent" | "error"; text: string }>({
+    kind: "idle",
+    text: "",
+  });
 
-  async function onSubmit(e) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
     const data = Object.fromEntries(new FormData(form));
@@ -105,7 +108,7 @@ export default function Contact() {
           </label>
           <label>
             <span>Message</span>
-            <textarea name="message" rows="5" required />
+            <textarea name="message" rows={5} required />
           </label>
           <div className="form__foot">
             <button className="btn btn--primary" type="submit" disabled={status.kind === "sending"}>

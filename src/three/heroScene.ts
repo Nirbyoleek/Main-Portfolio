@@ -4,17 +4,47 @@
 // clicking the avatar makes it wave.
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
-import { createStage, damp, clamp, smoothstep, prefersReducedMotion, isCoarsePointer } from "./stage.js";
-import { createAvatar } from "./avatar.js";
-import { makeLayerTexture, makeScreenTexture, LAYER_ASPECT } from "./mocks.js";
-import { C } from "./palette.js";
+import { createStage, damp, clamp, smoothstep, prefersReducedMotion, isCoarsePointer } from "./stage";
+import type { SceneHandle } from "./stage";
+import { createAvatar } from "./avatar";
+import { makeLayerTexture, makeScreenTexture, LAYER_ASPECT } from "./textures";
+import { C } from "./palette";
 
-export function createHeroScene(container, opts) {
+export interface HeroLayer {
+  key: string;
+  name: string;
+}
+
+export interface HeroSceneOptions {
+  layers: HeroLayer[];
+  getProgress: () => number;
+  onLayer?: (index: number) => void;
+  onAvatarClick?: () => void;
+  bubbleEl?: HTMLElement | null;
+}
+
+export interface HeroScene extends SceneHandle {
+  highlight: (index: number) => void;
+  wave: () => void;
+}
+
+interface Layout {
+  cam: THREE.Vector3;
+  camNear: THREE.Vector3;
+  target: THREE.Vector3;
+  stack: THREE.Vector3;
+  stackScale: number;
+  avatar: THREE.Vector3;
+  avatarRot: number;
+  avatarScale: number;
+}
+
+export function createHeroScene(container: HTMLElement, opts: HeroSceneOptions): HeroScene {
   const { layers, getProgress, onLayer, onAvatarClick, bubbleEl } = opts;
   const reduced = prefersReducedMotion();
   const coarse = isCoarsePointer();
 
-  let layout = null;
+  let layout: Layout | null = null;
   const stage = createStage(container, {
     fov: 30,
     onFrame: (dt, t) => frame(dt, t),
@@ -117,7 +147,7 @@ export function createHeroScene(container, opts) {
   tilt.add(finished);
 
   /* Layout per aspect ratio ----------------------------------------- */
-  function computeLayout(aspect) {
+  function computeLayout(aspect: number): Layout {
     if (aspect < 0.78) {
       // Phones: stack on top, avatar below it, both centred.
       return {
@@ -163,17 +193,17 @@ export function createHeroScene(container, opts) {
   let hovered = -1;
   let selected = -1;
   let avatarHover = false;
-  let drag = null;
+  let drag: { x: number; t: number; moved: number; start: number } | null = null;
   let yaw = 0;
   let yawVel = 0;
 
-  const pickLayer = (x, y) => {
+  const pickLayer = (x: number, y: number): number => {
     const hit = stage.pick(x, y, arts)[0];
-    return hit ? hit.object.userData.index : -1;
+    return hit ? (hit.object.userData.index as number) : -1;
   };
-  const pickAvatar = (x, y) => stage.pick(x, y, avatar.hitTargets).length > 0;
+  const pickAvatar = (x: number, y: number) => stage.pick(x, y, avatar.hitTargets).length > 0;
 
-  const onPointerMove = (e) => {
+  const onPointerMove = (e: PointerEvent) => {
     if (drag) {
       const dx = e.clientX - drag.x;
       drag.x = e.clientX;
@@ -197,12 +227,12 @@ export function createHeroScene(container, opts) {
     }
     el.style.cursor = a || i >= 0 ? "pointer" : "grab";
   };
-  const onPointerDown = (e) => {
+  const onPointerDown = (e: PointerEvent) => {
     drag = { x: e.clientX, t: performance.now(), moved: 0, start: e.clientX };
     yawVel = 0;
     el.style.cursor = "grabbing";
   };
-  const onPointerUp = (e) => {
+  const onPointerUp = (e: PointerEvent) => {
     if (!drag) return;
     const tapped = drag.moved < 6;
     drag = null;
@@ -237,9 +267,9 @@ export function createHeroScene(container, opts) {
   let introT = reduced ? 10 : 0;
   let smoothP = 0;
 
-  function frame(dt, t) {
+  function frame(dt: number, t: number) {
     introT += dt;
-    const L = layout;
+    const L = layout ?? computeLayout(camera.aspect);
     smoothP = reduced ? clamp(getProgress()) : damp(smoothP, clamp(getProgress()), 7, dt);
     const p = smoothstep(0.08, 0.85, smoothP);
 
@@ -305,7 +335,7 @@ export function createHeroScene(container, opts) {
   }
 
   return {
-    highlight(i) {
+    highlight(i: number) {
       selected = i;
     },
     wave: () => {

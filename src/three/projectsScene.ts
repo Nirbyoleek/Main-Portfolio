@@ -2,11 +2,19 @@
 // screen to bring it to the front; the front screen leans toward the cursor.
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
-import { createStage, damp, prefersReducedMotion, isCoarsePointer } from "./stage.js";
-import { makeProjectTexture, PROJECT_ASPECT } from "./mocks.js";
-import { C } from "./palette.js";
+import { createStage, damp, prefersReducedMotion, isCoarsePointer } from "./stage";
+import type { SceneHandle } from "./stage";
+import { makeProjectTexture, PROJECT_ASPECT } from "./textures";
+import { C } from "./palette";
 
-export function createProjectsScene(container, { projects, onSelect }) {
+export interface ProjectsScene extends SceneHandle {
+  setIndex: (i: number, notify?: boolean) => void;
+}
+
+export function createProjectsScene(
+  container: HTMLElement,
+  { projects, onSelect }: { projects: { mock: string }[]; onSelect?: (i: number) => void }
+): ProjectsScene {
   const reduced = prefersReducedMotion();
   const coarse = isCoarsePointer();
   let radius = 3.4;
@@ -94,9 +102,9 @@ export function createProjectsScene(container, { projects, onSelect }) {
   let index = 0;
   let angle = 0; // current carousel rotation
   let target = 0;
-  let drag = null;
+  let drag: { x: number; moved: number; startTarget: number } | null = null;
 
-  const setIndex = (i, notify = true) => {
+  const setIndex = (i: number, notify = true) => {
     const n = projects.length;
     // Choose the rotation closest to the current angle that shows panel i.
     const base = -i * step;
@@ -109,11 +117,11 @@ export function createProjectsScene(container, { projects, onSelect }) {
   const el = renderer.domElement;
   el.style.touchAction = "pan-y";
   el.style.cursor = "grab";
-  const onDown = (e) => {
+  const onDown = (e: PointerEvent) => {
     drag = { x: e.clientX, moved: 0, startTarget: target };
     el.style.cursor = "grabbing";
   };
-  const onMove = (e) => {
+  const onMove = (e: PointerEvent) => {
     if (drag) {
       const dx = e.clientX - drag.x;
       drag.moved = Math.abs(dx);
@@ -124,14 +132,14 @@ export function createProjectsScene(container, { projects, onSelect }) {
     const hit = stage.pick(e.clientX, e.clientY, hitList)[0];
     el.style.cursor = hit ? "pointer" : "grab";
   };
-  const onUp = (e) => {
+  const onUp = (e: PointerEvent) => {
     if (!drag) return;
     const wasTap = drag.moved < 6;
     drag = null;
     el.style.cursor = "grab";
     if (wasTap) {
       const hit = stage.pick(e.clientX, e.clientY, hitList)[0];
-      if (hit) setIndex(hit.object.userData.index);
+      if (hit) setIndex(hit.object.userData.index as number);
       return;
     }
     // Snap to the nearest panel.
@@ -143,7 +151,7 @@ export function createProjectsScene(container, { projects, onSelect }) {
   window.addEventListener("pointerup", onUp);
   window.addEventListener("pointercancel", onUp);
 
-  function frame(dt, t) {
+  function frame(dt: number, t: number) {
     camera.position.set(pointer.sx * 0.35, 1.9 + pointer.sy * 0.25, camZ);
     camera.lookAt(0, 0.1, radius * 0.7);
 

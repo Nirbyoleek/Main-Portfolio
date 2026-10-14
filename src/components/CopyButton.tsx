@@ -1,7 +1,14 @@
 import { useState } from "react";
 
 /** Copies `text` and confirms in place; falls back to selecting a hidden field. */
-export default function CopyButton({ text, label = "Copy email", done = "Copied", className = "" }) {
+interface Props {
+  text: string;
+  label?: string;
+  done?: string;
+  className?: string;
+}
+
+export default function CopyButton({ text, label = "Copy email", done = "Copied", className = "" }: Props) {
   const [copied, setCopied] = useState(false);
   const onClick = async () => {
     try {

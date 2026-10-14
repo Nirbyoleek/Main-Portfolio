@@ -3,30 +3,68 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Nirbyoleek Das, software engineer</title>
+    <title>Nirbyoleek Das, Software Engineer</title>
     <meta
       name="description"
-      content="Nirbyoleek Das builds production web apps end to end for PepsiCo and Wolters Kluwer. React, TypeScript, Node.js — and a portfolio you can take apart in 3D."
+      content="Nirbyoleek Das is a software engineer who builds production web apps end to end for PepsiCo and Wolters Kluwer, in React, TypeScript and Node.js."
     />
+    <meta name="author" content="Nirbyoleek Das" />
     <meta name="theme-color" content="#ECEBF4" />
-    <meta property="og:title" content="Nirbyoleek Das, software engineer" />
+    <link rel="canonical" href="%SITE_URL%/" />
+
+    <!-- Link previews (LinkedIn, WhatsApp, Slack, X) -->
+    <meta property="og:type" content="profile" />
+    <meta property="og:site_name" content="Nirbyoleek Das" />
+    <meta property="og:url" content="%SITE_URL%/" />
+    <meta property="og:title" content="Nirbyoleek Das, Software Engineer" />
     <meta
       property="og:description"
-      content="React, TypeScript and Node.js engineer. Take the interface apart in 3D."
+      content="React, TypeScript and Node.js. Production apps for PepsiCo and Wolters Kluwer, and an order matching engine doing 20,000 orders a second."
     />
-    <meta property="og:type" content="website" />
+    <meta property="og:image" content="%SITE_URL%/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Nirbyoleek Das, Software Engineer, with his 3D avatar at a desk" />
+    <meta property="profile:first_name" content="Nirbyoleek" />
+    <meta property="profile:last_name" content="Das" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Nirbyoleek Das, Software Engineer" />
+    <meta
+      name="twitter:description"
+      content="React, TypeScript and Node.js. Production apps for PepsiCo and Wolters Kluwer."
+    />
+    <meta name="twitter:image" content="%SITE_URL%/og-image.png" />
+
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="preload" as="image" href="/avatar.webp" type="image/webp" fetchpriority="high" />
+
+    <!-- Lets search engines show a profile for the name -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "name": "Nirbyoleek Das",
+        "url": "%SITE_URL%/",
+        "image": "%SITE_URL%/og-image.png",
+        "jobTitle": "Software Engineer",
+        "worksFor": { "@type": "Organization", "name": "Tiger Analytics" },
+        "alumniOf": { "@type": "CollegeOrUniversity", "name": "SRM Institute of Science and Technology" },
+        "address": { "@type": "PostalAddress", "addressCountry": "IN" },
+        "email": "mailto:nirbyoleek152001@gmail.com",
+        "sameAs": ["https://github.com/Nirbyoleek", "https://www.linkedin.com/in/nirbyoleek/"],
+        "knowsAbout": ["React", "TypeScript", "Node.js", "Express", "REST API design", "Web performance", "three.js"]
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
     <noscript>
       <p style="padding:2rem;font-family:system-ui">
-        Nirbyoleek Das — software engineer. This site needs JavaScript for its 3D views.
-        Email: nirbyoleek152001@gmail.com
+        Nirbyoleek Das, Software Engineer. React, TypeScript and Node.js. Email: nirbyoleek152001@gmail.com
       </p>
     </noscript>
-    <script type="module" src="/src/main.jsx"></script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

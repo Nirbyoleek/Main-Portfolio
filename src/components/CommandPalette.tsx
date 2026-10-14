@@ -1,16 +1,22 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { person } from "../data/content.js";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { person } from "../data/content";
 
 // A ⌘K / Ctrl+K palette with the things a recruiter usually wants:
 // jump to a section, grab the resume, copy the email, open profiles.
-export default function CommandPalette({ open, onClose }) {
+interface Action {
+  label: string;
+  hint: string;
+  run: () => void;
+}
+
+export default function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [q, setQ] = useState("");
   const [sel, setSel] = useState(0);
   const [note, setNote] = useState("");
-  const input = useRef(null);
-  const lastFocus = useRef(null);
+  const input = useRef<HTMLInputElement | null>(null);
+  const lastFocus = useRef<HTMLElement | null>(null);
 
-  const actions = useMemo(
+  const actions = useMemo<Action[]>(
     () => [
       { label: "Download resume (PDF)", hint: "File", run: () => downloadResume() },
       { label: "Copy email address", hint: person.email, run: () => copy(person.email) },
@@ -26,7 +32,7 @@ export default function CommandPalette({ open, onClose }) {
   );
   const list = actions.filter((a) => (a.label + " " + a.hint).toLowerCase().includes(q.trim().toLowerCase()));
 
-  function go(hash) {
+  function go(hash: string) {
     onClose();
     setTimeout(() => document.querySelector(hash)?.scrollIntoView({ behavior: "smooth" }), 40);
   }
@@ -39,7 +45,7 @@ export default function CommandPalette({ open, onClose }) {
     a.remove();
     onClose();
   }
-  async function copy(text) {
+  async function copy(text: string) {
     try {
       await navigator.clipboard.writeText(text);
       setNote("Email copied");
@@ -51,23 +57,25 @@ export default function CommandPalette({ open, onClose }) {
 
   useEffect(() => {
     if (!open) return;
-    lastFocus.current = document.activeElement;
+    lastFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setQ("");
     setSel(0);
     setNote("");
     const t = setTimeout(() => input.current?.focus(), 30);
-    const onEsc = (e) => e.key === "Escape" && onClose();
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
     window.addEventListener("keydown", onEsc);
     return () => {
       clearTimeout(t);
       window.removeEventListener("keydown", onEsc);
-      lastFocus.current?.focus?.();
+      lastFocus.current?.focus();
     };
   }, [open, onClose]);
 
   if (!open) return null;
 
-  const onKeyDown = (e) => {
+  const onKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
       setSel((s) => Math.min(list.length - 1, s + 1));

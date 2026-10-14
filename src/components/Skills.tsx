@@ -1,11 +1,14 @@
 import { useState } from "react";
-import { skills, skillGroups, fundamentals } from "../data/content.js";
-import { useScene } from "../hooks.js";
-import { createKeyboardScene } from "../three/keyboardScene.js";
+import { skills, skillGroups, fundamentals } from "../data/content";
+import { useScene } from "../hooks";
 
 export default function Skills() {
   const [active, setActive] = useState(-1);
-  const [ref, scene, state] = useScene((el) => createKeyboardScene(el, { skills, onKey: setActive }));
+  const [ref, scene, state] = useScene(() =>
+    import("../three/keyboardScene").then(({ createKeyboardScene }) => (el: HTMLElement) =>
+      createKeyboardScene(el, { skills, onKey: setActive })
+    )
+  );
   const s = active >= 0 ? skills[active] : null;
 
   return (
@@ -24,7 +27,7 @@ export default function Skills() {
             <>
               <strong>My working toolkit</strong>
               <p>
-                {state === "unsupported"
+                {state === "lite"
                   ? "The full list is below."
                   : "Press a key to see where I've used it. Type a letter to jump to a skill, or hit space."}
               </p>
@@ -33,7 +36,7 @@ export default function Skills() {
         </div>
       </div>
 
-      <div className={`skills__canvas ${state === "unsupported" ? "is-flat" : ""}`} ref={ref} />
+      <div className={`skills__canvas ${state === "lite" ? "is-flat" : ""}`} ref={ref} />
 
       <div className="wrap">
         <div className="matrix">

@@ -1,11 +1,11 @@
-import Nav from "./components/Nav.jsx";
-import Hero from "./components/Hero.jsx";
-import About from "./components/About.jsx";
-import Experience from "./components/Experience.jsx";
-import Projects from "./components/Projects.jsx";
-import Skills from "./components/Skills.jsx";
-import Contact from "./components/Contact.jsx";
-import { person, stats } from "./data/content.js";
+import Nav from "./components/Nav";
+import Hero from "./components/Hero";
+import About from "./components/About";
+import Experience from "./components/Experience";
+import Projects from "./components/Projects";
+import Skills from "./components/Skills";
+import Contact from "./components/Contact";
+import { person, stats } from "./data/content";
 
 // On phones the hero keeps only name and actions, so the headline and
 // numbers follow directly after it.

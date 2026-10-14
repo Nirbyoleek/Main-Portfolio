@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { experience } from "../data/content.js";
-import { durationLabel, monthLabel, monthsBetween, totalMonths } from "../lib/format.js";
+import { experience } from "../data/content";
+import { durationLabel, monthLabel, monthsBetween, totalMonths } from "../lib/format";
 
 export default function Experience() {
   const total = durationLabel(totalMonths(experience));
   // Older roles start collapsed to their first point on small screens.
-  const [open, setOpen] = useState(() => new Set([0]));
-  const toggle = (i) =>
+  const [open, setOpen] = useState(() => new Set<number>([0]));
+  const toggle = (i: number) =>
     setOpen((s) => {
       const n = new Set(s);
       n.has(i) ? n.delete(i) : n.add(i);
@@ -16,7 +16,7 @@ export default function Experience() {
   // Proportional strip: where each role sits between 2021 and today.
   const first = experience[experience.length - 1].start;
   const span = monthsBetween(first, null);
-  const offset = (ym) => monthsBetween(first, ym) - 1;
+  const offset = (ym: string) => monthsBetween(first, ym) - 1;
 
   return (
     <section className="section work" id="work" aria-labelledby="work-title">
@@ -29,7 +29,7 @@ export default function Experience() {
             {total} of professional engineering across four roles, React in every one of them.
           </p>
           <div className="span" aria-label={`Career timeline from ${monthLabel(first)} to today`}>
-            {experience.map((job, i) => (
+            {experience.map((job) => (
               <span
                 key={job.title + job.start}
                 className={`span__seg ${job.end ? "" : "is-current"}`}

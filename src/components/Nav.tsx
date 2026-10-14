@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { person } from "../data/content.js";
-import CommandPalette from "./CommandPalette.jsx";
+import { person } from "../data/content";
+import CommandPalette from "./CommandPalette";
 
 const links = [
   { href: "#about", label: "About" },
@@ -15,7 +15,7 @@ export default function Nav() {
   const [solid, setSolid] = useState(false);
   const [active, setActive] = useState("");
   const [palette, setPalette] = useState(false);
-  const bar = useRef(null);
+  const bar = useRef<HTMLSpanElement | null>(null);
   const closePalette = useCallback(() => setPalette(false), []);
   const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 
@@ -44,7 +44,7 @@ export default function Nav() {
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
-    const onKey = (e) => {
+    const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();

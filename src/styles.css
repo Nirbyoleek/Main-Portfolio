@@ -590,6 +590,23 @@ dd {
   height: 100%;
 }
 
+/* Still avatar: placeholder until the 3D scene is ready, and the whole
+   view on devices that get the static version. */
+.hero__still {
+  position: absolute;
+  /* Roughly where the 3D avatar sits, so the swap is a cross-fade. */
+  right: -2vw;
+  bottom: -1vh;
+  width: min(38vw, 64vh, 620px);
+  height: auto;
+  max-width: 100%;
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+}
+.hero__still.is-hidden {
+  opacity: 0;
+}
+
 .hero__copy {
   position: absolute;
   left: var(--gutter);
@@ -642,6 +659,9 @@ dd {
   --wdth: 125;
   font-variation-settings: "wdth" var(--wdth);
   animation: name-in 1.4s cubic-bezier(0.6, 0, 0.2, 1) both;
+}
+.has-shell .hero__name {
+  animation: none;
 }
 .hero__name span:last-child {
   color: var(--cobalt);
@@ -899,6 +919,12 @@ dd {
   }
   .hero__scroll {
     display: none;
+  }
+  .hero__still {
+    right: 50%;
+    transform: translateX(50%);
+    bottom: 44px;
+    width: min(96vw, 56vh);
   }
 }
 
@@ -1373,9 +1399,20 @@ dd {
   width: 100%;
   height: 100%;
 }
-.projects__canvas.is-flat {
+.projects__still {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: clamp(20px, 5%, 48px);
+}
+.projects__canvas.is-lite {
   height: auto;
-  background: none;
+  aspect-ratio: 1024 / 720;
+}
+.projects__canvas.is-lite .projects__still {
+  padding: 0;
 }
 .projects__status {
   position: absolute;

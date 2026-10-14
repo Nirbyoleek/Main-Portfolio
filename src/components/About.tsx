@@ -1,5 +1,5 @@
-import { education, experience, person, strengths, impact } from "../data/content.js";
-import { durationLabel, totalMonths } from "../lib/format.js";
+import { education, experience, person, strengths, impact } from "../data/content";
+import { durationLabel, totalMonths } from "../lib/format";
 
 export default function About() {
   const total = durationLabel(totalMonths(experience));

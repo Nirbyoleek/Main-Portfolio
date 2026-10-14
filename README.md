@@ -4,8 +4,8 @@ An exploded-view portfolio: the hero takes an interface apart into its five laye
 (data, logic, layout, style, motion) above the desk of a small 3D avatar, and
 scrolling snaps them back into one finished screen.
 
-Built with **React 19**, **three.js** and **Vite**. Every 3D object is code —
-no model files, no paid tools, no external assets at runtime.
+Built with **React 19**, **TypeScript**, **three.js** and **Vite**. Every 3D object is
+code: no model files, no paid tools.
 
 ## What you can do on the page
 
@@ -21,7 +21,29 @@ no model files, no paid tools, no external assets at runtime.
 
 Mobile: touch works everywhere (tap layers, keys and screens; swipe the turntable),
 layouts reflow, and WebGL pixel ratio is capped on touch devices. Respects
-`prefers-reduced-motion`. If WebGL is unavailable the page still works without the 3D views.
+`prefers-reduced-motion`.
+
+## Performance
+
+- **The hero is static HTML.** The build writes the name, headline, stats and resume
+  button into `index.html` (`src/lib/shell.ts`), so they paint before any JavaScript runs.
+- **three.js loads later, as its own chunk.** Each 3D scene is a dynamic `import()`,
+  started after the first paint (hero) or when its section nears the viewport.
+- **Light devices get a static version.** Data-saver mode, 2G, very low memory, no
+  WebGL, or `?lite` in the URL skip three.js entirely and show a still of the avatar
+  and flat project screens instead.
+
+In a local test on a throttled phone profile (4× CPU slowdown, 1.6 Mbps, 150 ms latency),
+first contentful paint went
+from about 5.8 s to about 0.35 s, and the JavaScript needed for it from 834 KB to 252 KB
+(uncompressed).
+
+## Sharing and search
+
+`index.html` carries Open Graph and Twitter tags with a 1200×630 preview image
+(`public/og-image.png`), a canonical URL, and a schema.org `Person` record. The build
+also writes `robots.txt` and `sitemap.xml`. The site URL comes from Netlify's `URL`
+variable; set `SITE_URL` to override it (for a custom domain).
 
 ## Run it
 
@@ -30,6 +52,9 @@ npm install
 npm run dev       # http://localhost:5173
 npm run build     # outputs to dist/
 npm run preview
+npm run typecheck # tsc, strict
+npm test          # vitest
+npm run check     # all three, as CI runs them
 ```
 
 ## Edit the content
@@ -45,16 +70,23 @@ EmailJS IDs are at the top of `src/components/Contact.jsx`.
 
 ```
 src/
-  data/content.js        all copy
+  data/content.ts        all copy, typed
   components/            React sections (Nav, Hero, About, Experience, Projects, Skills, Contact)
-  three/stage.js         renderer wrapper: sizing, pointer, pause when off-screen
-  three/avatar.js        the procedural avatar (look-at, blink, typing, wave)
-  three/heroScene.js     exploded layer stack + avatar
-  three/projectsScene.js project turntable
-  three/keyboardScene.js skills keyboard
-  three/mocks.js         canvas-drawn UI textures for layers, screens and keycaps
+  lib/                   pure code: dates and durations, maths, 2D drawings, the static hero
+  three/stage.ts         renderer wrapper: sizing, pointer, pause when off-screen
+  three/avatar.ts        the procedural avatar (look-at, blink, typing, wave)
+  three/heroScene.ts     exploded layer stack + avatar
+  three/projectsScene.ts project turntable
+  three/keyboardScene.ts skills keyboard
+  three/textures.ts      turns the 2D drawings into textures
   styles.css             tokens and layout
+test/                    unit tests for helpers, content and the static hero
 ```
+
+## Checks
+
+GitHub Actions runs `typecheck`, `test` and `build` on every push and pull request
+(`.github/workflows/ci.yml`) and posts bundle sizes in the run summary.
 
 ## Deploy
 

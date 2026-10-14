@@ -3,14 +3,15 @@
 // bar to send a wave across the board.
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
-import { createStage, damp, prefersReducedMotion, isCoarsePointer } from "./stage.js";
-import { makeKeyLegend } from "./mocks.js";
-import { C } from "./palette.js";
+import { createStage, damp, prefersReducedMotion, isCoarsePointer } from "./stage";
+import type { SceneHandle } from "./stage";
+import { makeKeyLegend } from "./textures";
+import { C } from "./palette";
 
 const U = 0.92; // one key unit
 const GAP = 0.08;
 
-const TONES = {
+const TONES: Record<string, { cap: string; text: string }> = {
   ink: { cap: C.ink, text: C.paperHi },
   cobalt: { cap: C.cobalt, text: C.paperHi },
   yellow: { cap: C.yellow, text: C.ink },
@@ -18,7 +19,35 @@ const TONES = {
   blank: { cap: "#DCDAEA", text: C.inkSoft },
 };
 
-export function createKeyboardScene(container, { skills, onKey }) {
+export interface KeySkill {
+  label: string;
+  w: number;
+  tone: string;
+}
+
+interface KeyDef extends KeySkill {
+  index: number;
+  space?: boolean;
+}
+
+interface Key {
+  s: KeyDef;
+  g: THREE.Group;
+  cap: THREE.Mesh<RoundedBoxGeometry, THREE.MeshStandardMaterial>;
+  press: number;
+  wave: number;
+  home: THREE.Vector3;
+}
+
+export interface KeyboardScene extends SceneHandle {
+  pressIndex: (i: number) => void;
+  wave: () => void;
+}
+
+export function createKeyboardScene(
+  container: HTMLElement,
+  { skills, onKey }: { skills: KeySkill[]; onKey?: (index: number) => void }
+): KeyboardScene {
   const reduced = prefersReducedMotion();
   const coarse = isCoarsePointer();
   let rowUnits = 8;
@@ -54,7 +83,7 @@ export function createKeyboardScene(container, { skills, onKey }) {
   const board = new THREE.Group();
   scene.add(board);
   const caseMat = new THREE.MeshStandardMaterial({ color: C.ink, roughness: 0.45, metalness: 0.1 });
-  let plate = null;
+  let plate: THREE.Mesh | null = null;
 
   const shadowFloor = new THREE.Mesh(
     new THREE.PlaneGeometry(40, 40),
@@ -66,19 +95,19 @@ export function createKeyboardScene(container, { skills, onKey }) {
   scene.add(shadowFloor);
 
   /* Keys ------------------------------------------------------------- */
-  const geoCache = new Map();
-  const capGeo = (w) => {
+  const geoCache = new Map<string, RoundedBoxGeometry>();
+  const capGeo = (w: number): RoundedBoxGeometry => {
     const k = w.toFixed(2);
     if (!geoCache.has(k)) geoCache.set(k, new RoundedBoxGeometry(w * U - GAP, 0.34, U - GAP, 4, 0.1));
-    return geoCache.get(k);
+    return geoCache.get(k)!;
   };
 
-  const allKeys = [
+  const allKeys: KeyDef[] = [
     ...skills.map((s, i) => ({ ...s, index: i })),
     { label: "Space makes a wave", w: 4, tone: "blank", index: -1, space: true },
   ];
 
-  const keys = allKeys.map((s) => {
+  const keys: Key[] = allKeys.map((s) => {
     const tone = TONES[s.tone] || TONES.paper;
     const g = new THREE.Group();
     const cap = new THREE.Mesh(
@@ -111,8 +140,8 @@ export function createKeyboardScene(container, { skills, onKey }) {
   // Flow the keys into rows of `rowUnits`, stretching the last key of each
   // row so every row ends flush, like a real keyboard.
   function layoutKeys() {
-    const rows = [];
-    let row = [];
+    const rows: { k: Key; w: number }[][] = [];
+    let row: { k: Key; w: number }[] = [];
     let used = 0;
     keys.forEach((k) => {
       const w = k.s.space ? Math.min(k.s.w, rowUnits) : k.s.w;
@@ -155,14 +184,14 @@ export function createKeyboardScene(container, { skills, onKey }) {
   ready = true;
 
   /* Interaction ------------------------------------------------------ */
-  let hovered = null;
-  let selected = null;
+  let hovered: Key | null = null;
+  let selected: Key | null = null;
   const el = renderer.domElement;
   el.style.touchAction = "pan-y";
 
-  const pickKey = (x, y) => {
+  const pickKey = (x: number, y: number): Key | null => {
     const hit = stage.pick(x, y, caps)[0];
-    return hit ? keys.find((k) => k.cap === hit.object) : null;
+    return hit ? (keys.find((k) => k.cap === hit.object) ?? null) : null;
   };
   const notify = () => {
     const k = hovered || selected;
@@ -174,7 +203,7 @@ export function createKeyboardScene(container, { skills, onKey }) {
     });
   };
 
-  const onMove = (e) => {
+  const onMove = (e: PointerEvent) => {
     if (e.pointerType === "touch") return;
     const k = pickKey(e.clientX, e.clientY);
     if (k !== hovered) {
@@ -183,11 +212,11 @@ export function createKeyboardScene(container, { skills, onKey }) {
     }
     el.style.cursor = k ? "pointer" : "default";
   };
-  let downAt = null;
-  const onDown = (e) => {
+  let downAt: { x: number; y: number } | null = null;
+  const onDown = (e: PointerEvent) => {
     downAt = { x: e.clientX, y: e.clientY };
   };
-  const onUp = (e) => {
+  const onUp = (e: PointerEvent) => {
     if (!downAt) return;
     const moved = Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y);
     downAt = null;
@@ -217,8 +246,8 @@ export function createKeyboardScene(container, { skills, onKey }) {
     threshold: [0, 0.2, 0.4, 0.6],
   });
   io.observe(container);
-  const cycle = {};
-  const onKeyDown = (e) => {
+  const cycle: Record<string, number> = {};
+  const onKeyDown = (e: KeyboardEvent) => {
     if (!onScreen || e.metaKey || e.ctrlKey || e.altKey) return;
     const tag = document.activeElement?.tagName;
     if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || tag === "BUTTON" || tag === "A") return;
@@ -232,14 +261,15 @@ export function createKeyboardScene(container, { skills, onKey }) {
     const matches = keys.filter((k) => !k.s.space && k.s.label.toLowerCase().startsWith(ch));
     if (!matches.length) return;
     cycle[ch] = ((cycle[ch] ?? -1) + 1) % matches.length;
-    selected = matches[cycle[ch]];
-    selected.press = 1.4; // a deeper, springy press
+    const hit = matches[cycle[ch]];
+    selected = hit;
+    hit.press = 1.4; // a deeper, springy press
     notify();
   };
   window.addEventListener("keydown", onKeyDown);
 
   /* Frame ------------------------------------------------------------ */
-  function frame(dt, t) {
+  function frame(dt: number, t: number) {
     camera.position.set(pointer.sx * 0.6, camDist * 0.72, camDist * 0.7);
     camera.lookAt(0, -0.2, 0.25);
     board.rotation.x = -pointer.sy * 0.08;
@@ -262,7 +292,7 @@ export function createKeyboardScene(container, { skills, onKey }) {
   }
 
   return {
-    pressIndex(i) {
+    pressIndex(i: number) {
       selected = keys.find((k) => k.s.index === i) || null;
       notify();
     },

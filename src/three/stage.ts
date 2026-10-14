@@ -1,29 +1,61 @@
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
+import { clamp } from "../lib/math";
 
-export const prefersReducedMotion = () =>
-  typeof window !== "undefined" &&
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+export { damp, clamp, smoothstep } from "../lib/math";
 
-export const isCoarsePointer = () =>
+export const prefersReducedMotion = (): boolean =>
+  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+export const isCoarsePointer = (): boolean =>
   typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
+
+/** Pointer in -1..1 over the canvas; `sx`/`sy` are smoothed copies. */
+export interface Pointer {
+  x: number;
+  y: number;
+  sx: number;
+  sy: number;
+  inside: boolean;
+}
+
+export interface StageOptions {
+  fov?: number;
+  onFrame?: (dt: number, elapsed: number) => void;
+  onResize?: (size: { width: number; height: number; aspect: number }) => void;
+}
+
+export interface Stage {
+  renderer: THREE.WebGLRenderer;
+  scene: THREE.Scene;
+  camera: THREE.PerspectiveCamera;
+  pointer: Pointer;
+  pick: (clientX: number, clientY: number, objects: THREE.Object3D[]) => THREE.Intersection[];
+  dispose: () => void;
+}
+
+/** Anything a scene module returns to React. */
+export interface SceneHandle {
+  dispose: () => void;
+}
 
 /**
  * A small wrapper around a WebGL renderer bound to one DOM container.
  * It sizes itself to the container, only renders while the container is
  * on screen, and tracks the pointer in normalised coordinates.
  */
-export function createStage(container, { fov = 35, onFrame, onResize } = {}) {
+export function createStage(container: HTMLElement, { fov = 35, onFrame, onResize }: StageOptions = {}): Stage {
+  const coarse = isCoarsePointer();
   const renderer = new THREE.WebGLRenderer({
-    antialias: true,
+    antialias: !coarse || (window.devicePixelRatio || 1) < 2,
     alpha: true,
     powerPreference: "high-performance",
   });
-  const maxDpr = isCoarsePointer() ? 1.6 : 2;
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxDpr));
+  // Phones already have dense screens; capping the ratio keeps fill-rate sane.
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, coarse ? 1.5 : 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
-  // Neutral keeps the cobalt from drifting to lavender (falls back on old three).
-  renderer.toneMapping = THREE.NeutralToneMapping ?? THREE.ACESFilmicToneMapping;
+  // Neutral keeps the cobalt from drifting to lavender.
+  renderer.toneMapping = THREE.NeutralToneMapping;
   renderer.toneMappingExposure = 1.0;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap;
@@ -39,23 +71,19 @@ export function createStage(container, { fov = 35, onFrame, onResize } = {}) {
 
   const camera = new THREE.PerspectiveCamera(fov, 1, 0.1, 100);
 
-  // Pointer: x/y in -1..1 over the canvas, plus whether it is inside.
-  const pointer = { x: 0, y: 0, sx: 0, sy: 0, inside: false, down: false };
-  const onMove = (e) => {
+  const pointer: Pointer = { x: 0, y: 0, sx: 0, sy: 0, inside: false };
+  const onMove = (e: PointerEvent) => {
     const r = container.getBoundingClientRect();
     // Clamped, so a cursor far outside the canvas only tilts things a little.
     pointer.x = clamp(((e.clientX - r.left) / r.width) * 2 - 1, -1.2, 1.2);
     pointer.y = clamp(-(((e.clientY - r.top) / r.height) * 2 - 1), -1.2, 1.2);
-    pointer.inside =
-      e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+    pointer.inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
   };
   window.addEventListener("pointermove", onMove, { passive: true });
 
-  let width = 1;
-  let height = 1;
   const resize = () => {
-    width = Math.max(1, container.clientWidth);
-    height = Math.max(1, container.clientHeight);
+    const width = Math.max(1, container.clientWidth);
+    const height = Math.max(1, container.clientHeight);
     renderer.setSize(width, height, false);
     renderer.domElement.style.width = "100%";
     renderer.domElement.style.height = "100%";
@@ -67,6 +95,7 @@ export function createStage(container, { fov = 35, onFrame, onResize } = {}) {
   ro.observe(container);
   resize();
 
+  // Only render while on screen and while the tab is visible.
   let visible = true;
   const io = new IntersectionObserver(
     ([entry]) => {
@@ -77,16 +106,14 @@ export function createStage(container, { fov = 35, onFrame, onResize } = {}) {
   io.observe(container);
 
   let raf = 0;
-  const t0 = performance.now();
-  let last = t0;
+  let last = performance.now();
   let elapsed = 0;
-  const loop = (now = performance.now()) => {
+  const loop = (now: number = performance.now()) => {
     raf = requestAnimationFrame(loop);
     const dt = Math.min(Math.max(0, (now - last) / 1000), 0.1);
     last = now;
     elapsed += dt;
     if (!visible || document.hidden) return;
-    // Smoothed pointer so everything that follows it eases.
     pointer.sx += (pointer.x - pointer.sx) * Math.min(1, dt * 6);
     pointer.sy += (pointer.y - pointer.sy) * Math.min(1, dt * 6);
     onFrame?.(dt, elapsed);
@@ -96,8 +123,7 @@ export function createStage(container, { fov = 35, onFrame, onResize } = {}) {
 
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
-  /** Objects under a client-space point. */
-  const pick = (clientX, clientY, objects) => {
+  const pick = (clientX: number, clientY: number, objects: THREE.Object3D[]) => {
     const r = container.getBoundingClientRect();
     ndc.set(((clientX - r.left) / r.width) * 2 - 1, -(((clientY - r.top) / r.height) * 2 - 1));
     raycaster.setFromCamera(ndc, camera);
@@ -110,10 +136,13 @@ export function createStage(container, { fov = 35, onFrame, onResize } = {}) {
     io.disconnect();
     window.removeEventListener("pointermove", onMove);
     scene.traverse((o) => {
-      o.geometry?.dispose?.();
-      const mats = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
+      if (!(o instanceof THREE.Mesh)) return;
+      o.geometry.dispose();
+      const mats: THREE.Material[] = Array.isArray(o.material) ? o.material : [o.material];
       mats.forEach((m) => {
-        Object.values(m).forEach((v) => v?.isTexture && v.dispose());
+        Object.values(m).forEach((v: unknown) => {
+          if (v instanceof THREE.Texture) v.dispose();
+        });
         m.dispose();
       });
     });
@@ -122,25 +151,5 @@ export function createStage(container, { fov = 35, onFrame, onResize } = {}) {
     renderer.domElement.remove();
   };
 
-  return {
-    renderer,
-    scene,
-    camera,
-    pointer,
-    pick,
-    dispose,
-    get size() {
-      return { width, height };
-    },
-  };
+  return { renderer, scene, camera, pointer, pick, dispose };
 }
-
-/** Frame-rate independent exponential smoothing. */
-export const damp = (current, target, lambda, dt) =>
-  current + (target - current) * (1 - Math.exp(-lambda * dt));
-
-export const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
-export const smoothstep = (a, b, v) => {
-  const t = clamp((v - a) / (b - a));
-  return t * t * (3 - 2 * t);
-};

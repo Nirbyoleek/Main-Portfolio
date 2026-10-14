@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    name: Typecheck, test and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - name: Report bundle sizes
+        run: |
+          echo "### Bundle" >> "$GITHUB_STEP_SUMMARY"
+          echo '| File | Size | Gzip |' >> "$GITHUB_STEP_SUMMARY"
+          echo '|---|---:|---:|' >> "$GITHUB_STEP_SUMMARY"
+          for f in dist/assets/*.js dist/assets/*.css; do
+            echo "| $(basename "$f") | $(stat -c%s "$f") B | $(gzip -c "$f" | wc -c) B |" >> "$GITHUB_STEP_SUMMARY"
+          done

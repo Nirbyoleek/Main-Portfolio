@@ -1,7 +1,86 @@
 // Everything written on the site lives here, so updating the portfolio
 // never means digging through components. Facts come from the 2026 resume.
 
-export const person = {
+export interface Person {
+  firstName: string;
+  lastName: string;
+  role: string;
+  headline: string;
+  current: { title: string; company: string };
+  openTo: string;
+  location: string;
+  email: string;
+  phone: string;
+  resume: string;
+  links: { github: string; linkedin: string };
+  updated: string;
+}
+export interface Stat {
+  value: string;
+  label: string;
+}
+export interface Strength {
+  title: string;
+  body: string;
+}
+export interface Layer {
+  key: string;
+  name: string;
+  line: string;
+}
+export interface Impact {
+  metric: string;
+  change: string;
+  /** New value as a percentage of the old one. */
+  after: number;
+  where: string;
+  how: string;
+}
+export interface Role {
+  company: string;
+  title: string;
+  place: string;
+  /** YYYY-MM */
+  start: string;
+  /** YYYY-MM, or null while current */
+  end: string | null;
+  clients?: string[];
+  tech: string[];
+  points: string[];
+}
+export interface Project {
+  id: string;
+  name: string;
+  client: string;
+  type: "client" | "personal";
+  status: string;
+  /** Which canvas drawing the 3D screen shows; see three/mocks.ts. */
+  mock: string;
+  role: string;
+  summary: string;
+  highlights: string[];
+  result: string;
+  stack: string[];
+  /** Live app or demo URL. */
+  link?: string;
+  /** Public source code URL. */
+  repo?: string;
+  /** Shown when there is no link or repo. */
+  note?: string;
+}
+export interface Skill {
+  label: string;
+  /** Keycap width in key units. */
+  w: number;
+  tone: "ink" | "cobalt" | "paper" | "yellow";
+  used: string;
+}
+export interface SkillGroup {
+  name: string;
+  items: { name: string; where: string[]; core?: boolean }[];
+}
+
+export const person: Person = {
   firstName: "Nirbyoleek",
   lastName: "Das",
   role: "Software Engineer",
@@ -22,7 +101,7 @@ export const person = {
 };
 
 // Headline numbers in the hero. Keep each one checkable against the resume.
-export const stats = [
+export const stats: Stat[] = [
   { value: "2+", label: "years building production apps" },
   { value: "2", label: "global enterprise clients" },
   { value: "−40%", label: "document retrieval time at PepsiCo" },
@@ -30,7 +109,7 @@ export const stats = [
 ];
 
 // What a hiring manager should remember, each backed by resume evidence.
-export const strengths = [
+export const strengths: Strength[] = [
   {
     title: "Frontend architecture",
     body: "I own the frontend architecture and API contracts for two Wolters Kluwer applications, and built the shared component and API-hook library that raised team delivery speed about 20%.",
@@ -46,7 +125,7 @@ export const strengths = [
 ];
 
 // The five layers in the hero's 3D stack: the parts of a feature I own.
-export const layers = [
+export const layers: Layer[] = [
   { key: "data", name: "Data", line: "Compound indexes and lean queries that cut API p95 by 25%." },
   { key: "logic", name: "Logic", line: "One shared auth layer: JWT with refresh rotation and role-based access." },
   { key: "layout", name: "Layout", line: "Route-level code splitting and memoised lists for 30% faster screens." },
@@ -55,7 +134,7 @@ export const layers = [
 ];
 
 // Measured outcomes. `after` is the new value as a % of the old one.
-export const impact = [
+export const impact: Impact[] = [
   { metric: "Document retrieval time", change: "−40%", after: 60, where: "PepsiCo Knowledge Management System", how: "Full-text search and metadata tagging" },
   { metric: "Page load time", change: "−30%", after: 70, where: "PepsiCo Support Load Portal", how: "Batched and de-duplicated API calls" },
   { metric: "API p95 response time", change: "−25%", after: 75, where: "Tiger Analytics client platforms", how: "Compound indexes, query tuning, leaner payloads" },
@@ -63,7 +142,7 @@ export const impact = [
 ];
 
 // `start`/`end` are YYYY-MM; end null means current. Durations are computed.
-export const experience = [
+export const experience: Role[] = [
   {
     company: "Tiger Analytics",
     title: "Application Engineer",
@@ -126,7 +205,7 @@ export const education = {
 };
 
 // `mock` picks which interface the 3D viewer draws for the project.
-export const projects = [
+export const projects: Project[] = [
   {
     id: "wk",
     name: "Wolters Kluwer apps",
@@ -208,7 +287,7 @@ export const projects = [
 
 // Keycaps on the skills keyboard. `w` is the key width in units,
 // `tone` picks the cap colour, `used` is shown when the key is pressed.
-export const skills = [
+export const skills: Skill[] = [
   { label: "JavaScript", w: 1.5, tone: "ink", used: "Every role and project since 2021." },
   { label: "TypeScript", w: 1.5, tone: "cobalt", used: "Both Wolters Kluwer applications and my order matching engine." },
   { label: "React", w: 1, tone: "cobalt", used: "Every role: Trakiot, Vakilsearch and Tiger Analytics." },
@@ -240,7 +319,7 @@ export const skills = [
 // The skills matrix under the keyboard, grouped like the resume. `where`
 // lists only places the resume shows the skill in use; leave it empty
 // rather than guess.
-export const skillGroups = [
+export const skillGroups: SkillGroup[] = [
   {
     name: "Languages",
     items: [
@@ -283,7 +362,7 @@ export const skillGroups = [
   },
 ];
 
-export const fundamentals = [
+export const fundamentals: string[] = [
   "Data structures and algorithms",
   "API and schema design",
   "Caching",
@@ -293,7 +372,7 @@ export const fundamentals = [
 ];
 
 // Lines the avatar says when you click it, in order.
-export const avatarLines = [
+export const avatarLines: string[] = [
   "Hi! I'm Nirbyoleek, a software engineer in India.",
   "Right now I'm building two apps for Wolters Kluwer.",
   "At PepsiCo I made document search 40% faster.",

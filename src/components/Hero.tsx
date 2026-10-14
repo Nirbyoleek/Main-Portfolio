@@ -1,17 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { person, layers, avatarLines, stats } from "../data/content.js";
-import { useScene, useScrollProgress } from "../hooks.js";
-import { createHeroScene } from "../three/heroScene.js";
-import CopyButton from "./CopyButton.jsx";
+import { person, layers, avatarLines, stats } from "../data/content";
+import { useScene, useScrollProgress } from "../hooks";
+import CopyButton from "./CopyButton";
 
 export default function Hero() {
-  const sectionRef = useRef(null);
-  const bubbleRef = useRef(null);
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const bubbleRef = useRef<HTMLDivElement | null>(null);
   const progress = useScrollProgress(sectionRef);
   const [layer, setLayer] = useState(-1);
-  const [line, setLine] = useState(null);
+  const [line, setLine] = useState<string | null>(null);
   const lineIdx = useRef(0);
-  const hideTimer = useRef(0);
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const say = useCallback(() => {
     setLine(avatarLines[lineIdx.current % avatarLines.length]);
@@ -20,15 +19,18 @@ export default function Hero() {
     hideTimer.current = setTimeout(() => setLine(null), 3600);
   }, []);
 
+  // three.js and the scene load as a separate chunk after the text paints.
   const [canvasRef, scene, state] = useScene(
-    (el) =>
-      createHeroScene(el, {
-        layers,
-        getProgress: () => progress.current,
-        onLayer: setLayer,
-        onAvatarClick: say,
-        bubbleEl: bubbleRef.current,
-      }),
+    () =>
+      import("../three/heroScene").then(({ createHeroScene }) => (el: HTMLElement) =>
+        createHeroScene(el, {
+          layers,
+          getProgress: () => progress.current,
+          onLayer: setLayer,
+          onAvatarClick: say,
+          bubbleEl: bubbleRef.current,
+        })
+      ),
     { eager: true }
   );
 
@@ -47,6 +49,16 @@ export default function Hero() {
     <section className="hero" id="top" ref={sectionRef} aria-label="Introduction">
       <div className="hero__stage">
         <div className="hero__canvas" ref={canvasRef} />
+        {/* A still of the avatar: the whole view on light devices, and a
+            placeholder elsewhere until the 3D scene is ready. */}
+        <img
+          className={`hero__still ${state === "ready" ? "is-hidden" : ""} ${state === "lite" ? "is-lite" : ""}`}
+          src="./avatar.webp"
+          width="720"
+          height="720"
+          alt="Illustrated avatar of Nirbyoleek at his desk with a laptop"
+          fetchPriority="high"
+        />
         <div className={`bubble-anchor ${line ? "is-on" : ""}`} ref={bubbleRef} aria-live="polite">
           {line && <p className="bubble">{line}</p>}
         </div>

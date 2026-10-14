@@ -5,8 +5,9 @@
 // the laptop when you stop moving, and waves when clicked.
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
-import { C } from "./palette.js";
-import { damp } from "./stage.js";
+import { C } from "./palette";
+import { damp } from "../lib/math";
+import type { Pointer } from "./stage";
 
 const SKIN = "#F1C9AB";
 const SKIN_SHADE = "#E2A98A";
@@ -15,20 +16,36 @@ const HAIR = "#241A18";
 const HAIR_HI = "#3A2A25";
 const LIP = "#9A4740";
 
-const mat = (color, opts = {}) =>
+type Vec3 = [number, number, number];
+
+const mat = (color: THREE.ColorRepresentation, opts: THREE.MeshStandardMaterialParameters = {}) =>
   new THREE.MeshStandardMaterial({ color, roughness: 0.62, metalness: 0, ...opts });
 
-function mesh(geo, material, { pos, rot, scale, shadow = true } = {}) {
+interface MeshOpts {
+  pos?: Vec3;
+  rot?: Vec3;
+  scale?: Vec3 | number;
+  shadow?: boolean;
+}
+
+function mesh<G extends THREE.BufferGeometry, M extends THREE.Material>(
+  geo: G,
+  material: M,
+  { pos, rot, scale, shadow = true }: MeshOpts = {}
+): THREE.Mesh<G, M> {
   const m = new THREE.Mesh(geo, material);
   if (pos) m.position.set(...pos);
   if (rot) m.rotation.set(...rot);
-  if (scale) m.scale.set(...(Array.isArray(scale) ? scale : [scale, scale, scale]));
+  if (scale !== undefined) {
+    const v: Vec3 = Array.isArray(scale) ? scale : [scale, scale, scale];
+    m.scale.set(...v);
+  }
   m.castShadow = shadow;
   m.receiveShadow = shadow;
   return m;
 }
 
-function roundedRect(w, h, r) {
+function roundedRect(w: number, h: number, r: number): THREE.Shape {
   const s = new THREE.Shape();
   const x = -w / 2;
   const y = -h / 2;
@@ -45,7 +62,7 @@ function roundedRect(w, h, r) {
 }
 
 /** A glasses rim: a rounded rectangle with a rounded-rectangle hole. */
-function rimGeometry(w, h, r, t) {
+function rimGeometry(w: number, h: number, r: number, t: number): THREE.ExtrudeGeometry {
   const outer = roundedRect(w, h, r);
   const inner = roundedRect(w - t * 2, h - t * 2, Math.max(0.005, r - t));
   outer.holes.push(new THREE.Path(inner.getPoints(24).reverse()));
@@ -61,7 +78,30 @@ function rimGeometry(w, h, r, t) {
   return g;
 }
 
-export function createAvatar() {
+export interface Avatar {
+  root: THREE.Group;
+  update: (dt: number, t: number, pointer: Pointer, opts?: { reduced?: boolean }) => void;
+  wave: () => void;
+  hitTargets: THREE.Object3D[];
+  getHeadTop: () => THREE.Vector3;
+  setHover: (on: boolean) => void;
+}
+
+interface Arm {
+  shoulder: THREE.Group;
+  elbow: THREE.Group;
+  hand: THREE.Group;
+  side: number;
+}
+
+interface ArmPose {
+  sx: number;
+  sz: number;
+  ex: number;
+  ez: number;
+}
+
+export function createAvatar(): Avatar {
   const root = new THREE.Group();
   root.name = "avatar";
 
@@ -217,7 +257,7 @@ export function createAvatar() {
   );
 
   // Eyes: white, iris, pupil and a catch-light. Irises follow the cursor.
-  const eyes = [];
+  const eyes: { g: THREE.Group; ir: THREE.Group; side: number }[] = [];
   [-1, 1].forEach((s) => {
     const g = new THREE.Group();
     g.position.set(0.105 * s, 0.285, 0.272);
@@ -306,19 +346,20 @@ export function createAvatar() {
   // Quiff: overlapping lobes swept towards the avatar's left.
   const quiff = new THREE.Group();
   quiff.position.set(0, 0.56, 0.06);
-  [
+  const lobes: [number, number, number, number, Vec3, number][] = [
     [-0.12, 0.02, 0.12, 0.13, [1.35, 0.62, 0.9], -0.35],
     [0.0, 0.06, 0.1, 0.15, [1.45, 0.7, 1.0], -0.15],
     [0.12, 0.05, 0.05, 0.13, [1.3, 0.66, 1.05], 0.1],
     [0.05, 0.08, -0.06, 0.15, [1.4, 0.62, 1.1], 0],
     [-0.08, 0.06, -0.08, 0.14, [1.3, 0.62, 1.1], -0.1],
-  ].forEach(([x, y, z, r, sc, rz]) => quiff.add(mesh(new THREE.SphereGeometry(r, 24, 18), hair, { pos: [x, y, z], scale: sc, rot: [0.15, 0, rz] })));
+  ];
+  lobes.forEach(([x, y, z, r, sc, rz]) => quiff.add(mesh(new THREE.SphereGeometry(r, 24, 18), hair, { pos: [x, y, z], scale: sc, rot: [0.15, 0, rz] })));
   // a lighter strand catching the light
   quiff.add(mesh(new THREE.SphereGeometry(0.08, 18, 14), hairHi, { pos: [-0.02, 0.12, 0.12], scale: [1.6, 0.4, 0.8], rot: [0.2, 0, -0.3] }));
   face.add(quiff);
 
   /* Arms ------------------------------------------------------------- */
-  const makeArm = (side) => {
+  const makeArm = (side: number): Arm => {
     const shoulder = new THREE.Group();
     shoulder.position.set(0.37 * side, 0.46, 0.02);
     shoulder.add(mesh(new THREE.SphereGeometry(0.1, 18, 14), hoodie));
@@ -339,7 +380,7 @@ export function createAvatar() {
   const armL = makeArm(-1);
   const armR = makeArm(1);
 
-  const restArm = (arm, t, typing) => {
+  const restArm = (arm: Arm, t: number, typing: boolean): ArmPose => {
     const tap = typing ? Math.sin(t * 11 + arm.side * 1.7) * 0.06 : 0;
     return { sx: -0.55, sz: 0.12 * arm.side, ex: -1.05 + tap, ez: -0.3 * arm.side };
   };
@@ -358,7 +399,7 @@ export function createAvatar() {
 
   const hitTargets = [torso, skull, capTop, capSides, capBack, ...quiff.children, ...face.children];
 
-  function update(dt, t, pointer, { reduced = false } = {}) {
+  function update(dt: number, t: number, pointer: Pointer, { reduced = false }: { reduced?: boolean } = {}) {
     // When the cursor rests for a few seconds, glance down at the laptop.
     if (Math.abs(pointer.x - state.lastPointer.x) + Math.abs(pointer.y - state.lastPointer.y) > 0.002) {
       state.lastMove = t;
@@ -414,7 +455,7 @@ export function createAvatar() {
         ez: THREE.MathUtils.lerp(Rp.ez, 0.35 + wag, k),
       };
     }
-    const applyArm = (arm, p) => {
+    const applyArm = (arm: Arm, p: ArmPose) => {
       arm.shoulder.rotation.x = damp(arm.shoulder.rotation.x, p.sx, 14, dt);
       arm.shoulder.rotation.z = damp(arm.shoulder.rotation.z, p.sz, 14, dt);
       arm.elbow.rotation.x = damp(arm.elbow.rotation.x, p.ex, 14, dt);
@@ -452,7 +493,7 @@ export function createAvatar() {
     wave,
     hitTargets,
     getHeadTop,
-    setHover(v) {
+    setHover(v: boolean) {
       state.hover = v ? 1 : 0;
     },
   };

@@ -1,10 +1,11 @@
-// 2D drawings that become textures on the 3D planes: the hero's exploded
-// layers and the screens in the project viewer. Everything is drawn with the
-// canvas API so there are no image assets to load.
-import * as THREE from "three";
-import { C, FONT } from "./palette.js";
+// 2D drawings for the hero's exploded layers, the project screens and the
+// keycap legends. Pure canvas, no three.js: the 3D scenes turn them into
+// textures (three/textures.ts), and the static version shows them directly.
+import { C, FONT } from "../three/palette";
 
-function rr(ctx, x, y, w, h, r) {
+type Ctx = CanvasRenderingContext2D;
+
+function rr(ctx: Ctx, x: number, y: number, w: number, h: number, r: number) {
   const rad = Math.min(r, w / 2, h / 2);
   ctx.beginPath();
   ctx.moveTo(x + rad, y);
@@ -14,21 +15,31 @@ function rr(ctx, x, y, w, h, r) {
   ctx.arcTo(x, y, x + w, y, rad);
   ctx.closePath();
 }
-const fillRR = (ctx, x, y, w, h, r, color) => {
+const fillRR = (ctx: Ctx, x: number, y: number, w: number, h: number, r: number, color: string) => {
   rr(ctx, x, y, w, h, r);
   ctx.fillStyle = color;
   ctx.fill();
 };
-const strokeRR = (ctx, x, y, w, h, r, color, lw = 2) => {
+const strokeRR = (ctx: Ctx, x: number, y: number, w: number, h: number, r: number, color: string, lw = 2) => {
   rr(ctx, x, y, w, h, r);
   ctx.strokeStyle = color;
   ctx.lineWidth = lw;
   ctx.stroke();
 };
-const text = (ctx, str, x, y, size, color, weight = 500, stretch = 100, align = "left") => {
+const text = (
+  ctx: Ctx,
+  str: string,
+  x: number,
+  y: number,
+  size: number,
+  color: string,
+  weight = 500,
+  stretch = 100,
+  align: CanvasTextAlign = "left"
+) => {
   // `font-stretch` in the canvas font shorthand only accepts keywords, so the
   // width axis is mapped to the nearest keyword.
-  const kw =
+  const kw: CanvasFontStretch =
     stretch >= 125
       ? "ultra-expanded"
       : stretch >= 112
@@ -54,23 +65,17 @@ const text = (ctx, str, x, y, size, color, weight = 500, stretch = 100, align = 
     /* noop */
   }
 };
-const bar = (ctx, x, y, w, h, color) => fillRR(ctx, x, y, w, h, h / 2, color);
+const bar = (ctx: Ctx, x: number, y: number, w: number, h: number, color: string) => fillRR(ctx, x, y, w, h, h / 2, color);
 
-function makeCanvas(w, h) {
+function makeCanvas(w: number, h: number): [HTMLCanvasElement, Ctx] {
   const c = document.createElement("canvas");
   c.width = w;
   c.height = h;
-  return c;
+  const ctx = c.getContext("2d");
+  if (!ctx) throw new Error("2D canvas is not available");
+  return [c, ctx];
 }
 
-export function canvasTexture(canvas, renderer) {
-  const t = new THREE.CanvasTexture(canvas);
-  t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = renderer ? Math.min(8, renderer.capabilities.getMaxAnisotropy()) : 4;
-  t.generateMipmaps = true;
-  t.minFilter = THREE.LinearMipmapLinearFilter;
-  return t;
-}
 
 /* ------------------------------------------------------------------ */
 /* Hero layers                                                         */
@@ -81,7 +86,7 @@ export function canvasTexture(canvas, renderer) {
 const LAYER_W = 1024;
 const LAYER_H = 640;
 
-function layerFrame(ctx, label, tint) {
+function layerFrame(ctx: Ctx, label: string, tint: string) {
   ctx.clearRect(0, 0, LAYER_W, LAYER_H);
   strokeRR(ctx, 6, 6, LAYER_W - 12, LAYER_H - 12, 28, tint, 4);
   // Name tab on the layer's top edge, like a frame label in a design tool.
@@ -91,7 +96,7 @@ function layerFrame(ctx, label, tint) {
   text(ctx, label, 48, 58, 30, tint === C.yellow ? C.ink : C.paperHi, 700);
 }
 
-const drawers = {
+const drawers: Record<string, (ctx: Ctx) => void> = {
   data(ctx) {
     layerFrame(ctx, "Data", C.ink);
     ctx.fillStyle = "rgba(21,18,58,0.10)";
@@ -132,7 +137,8 @@ const drawers = {
     ];
     ctx.strokeStyle = C.cobalt;
     ctx.lineWidth = 5;
-    const link = (a, b) => {
+    type Node = { x: number; y: number; w: number; label: string };
+    const link = (a: Node, b: Node) => {
       ctx.beginPath();
       ctx.moveTo(a.x + a.w, a.y + 40);
       const mx = (a.x + a.w + b.x) / 2;
@@ -153,7 +159,7 @@ const drawers = {
   layout(ctx) {
     layerFrame(ctx, "Layout", C.inkSoft);
     ctx.setLineDash([14, 10]);
-    const s = (x, y, w, h) => strokeRR(ctx, x, y, w, h, 14, C.inkSoft, 3);
+    const s = (x: number, y: number, w: number, h: number) => strokeRR(ctx, x, y, w, h, 14, C.inkSoft, 3);
     s(60, 100, 904, 70); // nav
     s(60, 200, 560, 230); // hero
     s(650, 200, 314, 230); // aside
@@ -244,10 +250,13 @@ const drawers = {
   },
 };
 
-export function makeLayerTexture(key, renderer) {
-  const c = makeCanvas(LAYER_W, LAYER_H);
-  drawers[key](c.getContext("2d"));
-  return canvasTexture(c, renderer);
+/** Layer keys the hero can draw; content.layers must use these. */
+export const LAYER_KEYS = Object.keys(drawers);
+
+export function drawLayer(key: string): HTMLCanvasElement {
+  const [c, ctx] = makeCanvas(LAYER_W, LAYER_H);
+  (drawers[key] ?? drawers.data)(ctx);
+  return c;
 }
 export const LAYER_ASPECT = LAYER_W / LAYER_H;
 
@@ -255,11 +264,10 @@ export const LAYER_ASPECT = LAYER_W / LAYER_H;
 /* Finished screen (shown on the laptop once the layers collapse)       */
 /* ------------------------------------------------------------------ */
 
-export function makeScreenTexture(renderer) {
+export function drawScreen(): HTMLCanvasElement {
   const W = 1024;
   const H = 640;
-  const c = makeCanvas(W, H);
-  const ctx = c.getContext("2d");
+  const [c, ctx] = makeCanvas(W, H);
   ctx.fillStyle = C.paperHi;
   ctx.fillRect(0, 0, W, H);
   ctx.fillStyle = C.paper;
@@ -277,7 +285,7 @@ export function makeScreenTexture(renderer) {
   fillRR(ctx, 640, 180, 300, 200, 18, C.cobalt);
   fillRR(ctx, 640, 400, 140, 100, 18, C.yellow);
   fillRR(ctx, 800, 400, 140, 100, 18, C.paperHi);
-  return canvasTexture(c, renderer);
+  return c;
 }
 
 /* ------------------------------------------------------------------ */
@@ -287,7 +295,7 @@ export function makeScreenTexture(renderer) {
 const PW = 1024;
 const PH = 720;
 
-function browserChrome(ctx, title) {
+function browserChrome(ctx: Ctx, title: string) {
   fillRR(ctx, 0, 0, PW, PH, 34, C.paperHi);
   ctx.save();
   rr(ctx, 0, 0, PW, PH, 34);
@@ -300,7 +308,7 @@ function browserChrome(ctx, title) {
   ctx.restore();
 }
 
-const projectMocks = {
+const projectMocks: Record<string, (ctx: Ctx) => void> = {
   wk(ctx) {
     browserChrome(ctx, "app.client / workspace");
     // Two app panes side by side, tied by an API contract.
@@ -455,10 +463,13 @@ const projectMocks = {
   },
 };
 
-export function makeProjectTexture(project, renderer) {
-  const c = makeCanvas(PW, PH);
-  (projectMocks[project.mock] || projectMocks.wk)(c.getContext("2d"));
-  return canvasTexture(c, renderer);
+/** Screen drawings a project can use as its `mock`. */
+export const PROJECT_MOCKS = Object.keys(projectMocks);
+
+export function drawProject(mock: string): HTMLCanvasElement {
+  const [c, ctx] = makeCanvas(PW, PH);
+  (projectMocks[mock] ?? projectMocks.wk)(ctx);
+  return c;
 }
 export const PROJECT_ASPECT = PW / PH;
 
@@ -466,11 +477,10 @@ export const PROJECT_ASPECT = PW / PH;
 /* Keycap legends                                                      */
 /* ------------------------------------------------------------------ */
 
-export function makeKeyLegend(label, w, color, renderer) {
+export function drawKeyLegend(label: string, w: number, color: string): HTMLCanvasElement {
   const H = 160;
   const W = Math.round(H * w);
-  const c = makeCanvas(W, H);
-  const ctx = c.getContext("2d");
+  const [c, ctx] = makeCanvas(W, H);
   ctx.clearRect(0, 0, W, H);
   let size = 50;
   ctx.font = `700 ${size}px ${FONT}`;
@@ -479,5 +489,5 @@ export function makeKeyLegend(label, w, color, renderer) {
     ctx.font = `700 ${size}px ${FONT}`;
   }
   text(ctx, label, 20, 30 + size, size, color, 700);
-  return canvasTexture(c, renderer);
+  return c;
 }
