@@ -11,8 +11,8 @@
 //
 // Not part of the site build. Needs three and sharp:
 //   npm i --no-save sharp
-//   GLASSES='{"dx":0.003,"dy":0.0005,"w":0.05,"h":0.033,"r":0.0022,"n":5,"lower":0.9,"z":0.031,"wrap":0.007,"tilt":0.25,"armOut":0.015,"armBack":0.115,"color":[0.015,0.015,0.018,1]}' \
-//   node tools/rocketbox-to-glb.mjs Business_Male_06_facial.fbx Textures m025 public/avatar/avatar.glb
+//   GLASSES='{"dx":0.003,"dy":0.0005,"w":0.05,"h":0.033,"r":0.0022,"n":5,"lower":0.9,"z":0.029,"wrap":0.007,"tilt":0.25,"armOut":0.015,"armBack":0.11,"color":[0.015,0.015,0.018,1]}' \
+//   node tools/rocketbox-to-glb.mjs Male_Adult_20_facial.fbx Textures m027 public/avatar/avatar.glb
 import fs from 'fs';
 import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';

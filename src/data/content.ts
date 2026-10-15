@@ -118,7 +118,7 @@ export const person: Person = {
 };
 
 // The hero avatar: a rigged, realistic 3D model animated by TalkingHead.
-// Built from Microsoft Rocketbox "Business_Male_06" (MIT) with tools/rocketbox-to-glb.mjs,
+// Built from Microsoft Rocketbox "Male_Adult_20" (MIT) with tools/rocketbox-to-glb.mjs,
 // which re-rigs it, keeps its ARKit + viseme blend shapes and adds the glasses.
 // Set to null to fall back to the illustrated avatar drawn in code.
 export const avatarModel: AvatarModel | null = {

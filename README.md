@@ -32,7 +32,7 @@ blinking, eye contact, facial moods, hand gestures and lip-sync from ARKit and
 viseme blend shapes. Speech is silent: each answer's words are turned into
 mouth shapes and shown as captions, so nothing plays sound.
 
-The model is **Business_Male_06** from
+The model is **Male_Adult_20** from
 [Microsoft Rocketbox](https://github.com/microsoft/Microsoft-Rocketbox) (MIT,
 license in `public/avatar/LICENSE-rocketbox.txt`). `tools/rocketbox-to-glb.mjs`
 converts it: it re-rigs the 3ds Max skeleton to the bone names and rest pose
