@@ -11,3 +11,9 @@
   for = "/assets/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+
+# The avatar model and its still change rarely.
+[[headers]]
+  for = "/avatar/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"

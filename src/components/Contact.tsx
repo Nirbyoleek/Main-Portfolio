@@ -91,7 +91,7 @@ export default function Contact() {
           </ul>
         </div>
 
-        <form className="form" onSubmit={onSubmit}>
+        <form className="form" onSubmit={onSubmit} data-spot>
           <label>
             <span>Your name</span>
             <input name="user_name" autoComplete="name" required />

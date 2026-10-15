@@ -5,8 +5,9 @@ import Experience from "./components/Experience";
 import Projects from "./components/Projects";
 import Skills from "./components/Skills";
 import Contact from "./components/Contact";
+import Marquee from "./components/Marquee";
 import { person, stats } from "./data/content";
-import { CountUp, useMagneticButtons, useRevealOnScroll } from "./lib/motion";
+import { CountUp, useMagneticButtons, useRevealOnScroll, useSpotlight } from "./lib/motion";
 
 // On phones the hero keeps only name and actions, so the headline and
 // numbers follow directly after it.
@@ -35,6 +36,7 @@ function MobileStats() {
 export default function App() {
   useRevealOnScroll();
   useMagneticButtons();
+  useSpotlight();
   return (
     <>
       <a className="skip" href="#main">
@@ -44,6 +46,7 @@ export default function App() {
       <Hero />
       <main id="main">
         <MobileStats />
+        <Marquee />
         <About />
         <Experience />
         <Projects />

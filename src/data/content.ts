@@ -14,6 +14,24 @@ export interface Person {
   links: { github: string; linkedin: string };
   updated: string;
 }
+/**
+ * A rigged 3D avatar for the hero, made in a dedicated creator and animated
+ * by TalkingHead. Avaturn (from a selfie) works best; VRoid, MetaPerson and
+ * Blender/MPFB models work too. `retarget` and `baseline` fine-tune how the
+ * library poses a given creator's skeleton and face.
+ */
+export interface AvatarModel {
+  /** The .glb file, relative to the site root. */
+  url: string;
+  body: "M" | "F";
+  /** A still image of the avatar for the first paint and light devices. */
+  still: string;
+  view?: "full" | "mid" | "upper" | "head";
+  camera?: { cameraDistance?: number; cameraX?: number; cameraY?: number; cameraRotateY?: number };
+  retarget?: Record<string, unknown>;
+  baseline?: Record<string, number>;
+}
+
 export interface Stat {
   value: string;
   label: string;
@@ -97,6 +115,18 @@ export const person: Person = {
     linkedin: "https://www.linkedin.com/in/nirbyoleek/",
   },
   updated: "October 2026",
+};
+
+// The hero avatar: a rigged, realistic 3D model animated by TalkingHead.
+// Built from Microsoft Rocketbox "Business_Male_06" (MIT) with tools/rocketbox-to-glb.mjs,
+// which re-rigs it, keeps its ARKit + viseme blend shapes and adds the glasses.
+// Set to null to fall back to the illustrated avatar drawn in code.
+export const avatarModel: AvatarModel | null = {
+  url: "./avatar/avatar.glb",
+  still: "./avatar/avatar.webp",
+  body: "M",
+  view: "mid",
+  baseline: { eyeBlinkLeft: 0.04, eyeBlinkRight: 0.04 },
 };
 
 // Headline numbers in the hero. Keep each one checkable against the resume.
@@ -371,6 +401,36 @@ export const fundamentals: string[] = [
 ];
 
 // Lines the avatar says when you click it, in order.
+// Questions a visitor can ask the avatar in the hero. Answers are spoken
+// (silently, lip-synced) with captions, so keep them short and plain.
+export interface AvatarQA {
+  q: string;
+  a: string;
+  gesture?: "handup" | "thumbup" | "index" | "ok" | "shrug";
+}
+export const avatarQA: AvatarQA[] = [
+  {
+    q: "Who are you?",
+    a: "Hi, I'm Nirbyoleek. I'm an application engineer at Tiger Analytics, and I build production web apps end to end.",
+    gesture: "handup",
+  },
+  {
+    q: "What have you shipped?",
+    a: "A knowledge management system for PepsiCo that cut document retrieval time by 40 percent, and two apps for Wolters Kluwer whose frontend architecture I own.",
+    gesture: "index",
+  },
+  {
+    q: "Your stack?",
+    a: "React and TypeScript in the browser, Node, Express and MongoDB behind it, with JWT auth and role-based access.",
+    gesture: "ok",
+  },
+  {
+    q: "Can we talk?",
+    a: "Yes, please! Grab my resume, or scroll down to the contact form. I reply fast.",
+    gesture: "thumbup",
+  },
+];
+
 export const avatarLines: string[] = [
   "Hi! I'm Nirbyoleek, a software engineer in India.",
   "Right now I'm building two apps for Wolters Kluwer.",

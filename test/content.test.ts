@@ -1,7 +1,7 @@
 // Guards the content file: everything the components and 3D scenes rely on
 // is present, and dates and links are well formed.
 import { describe, expect, it } from "vitest";
-import { experience, impact, layers, person, projects, skillGroups, skills, stats } from "../src/data/content";
+import { avatarModel, avatarQA, experience, impact, layers, person, projects, skillGroups, skills, stats } from "../src/data/content";
 import { LAYER_KEYS, PROJECT_MOCKS } from "../src/lib/drawings";
 
 const YM = /^\d{4}-(0[1-9]|1[0-2])$/;
@@ -80,5 +80,22 @@ describe("skills", () => {
   it("mark at least one core skill per group that has one", () => {
     const core = skillGroups.flatMap((g) => g.items.filter((i) => i.core));
     expect(core.length).toBeGreaterThan(0);
+  });
+});
+
+describe("avatar", () => {
+  it("points at a .glb model and a still image, relative to the site root", () => {
+    if (!avatarModel) return;
+    expect(avatarModel.url).toMatch(/^\.\/.+\.glb$/);
+    expect(avatarModel.still).toMatch(/^\.\/.+\.(webp|png|jpg)$/);
+  });
+
+  it("has short, distinct questions and answers it can say", () => {
+    expect(avatarQA.length).toBeGreaterThanOrEqual(3);
+    expect(new Set(avatarQA.map((x) => x.q)).size).toBe(avatarQA.length);
+    for (const x of avatarQA) {
+      expect(x.q.length).toBeLessThanOrEqual(26);
+      expect(x.a.split(/\s+/).length).toBeLessThanOrEqual(32);
+    }
   });
 });

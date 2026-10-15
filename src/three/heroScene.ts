@@ -23,11 +23,20 @@ export interface HeroSceneOptions {
   onLayer?: (index: number) => void;
   onAvatarClick?: () => void;
   bubbleEl?: HTMLElement | null;
+  /**
+   * Draw the built-in illustrated avatar at its desk. Off when a rigged
+   * avatar model is shown separately (see proAvatar.ts).
+   */
+  withAvatar?: boolean;
+  /** Lit for a dark backdrop: brighter glass edges and a stronger rim. */
+  dark?: boolean;
 }
 
 export interface HeroScene extends SceneHandle {
   highlight: (index: number) => void;
   wave: () => void;
+  /** Where the layer stack is on the page, in client pixels. */
+  stackOnScreen: () => { x: number; y: number };
 }
 
 interface Layout {
@@ -39,6 +48,8 @@ interface Layout {
   avatar: THREE.Vector3;
   avatarRot: number;
   avatarScale: number;
+  /** How far the stack moves when the rigged avatar is shown instead. */
+  proShift: THREE.Vector3;
   /** Where the avatar looks (in pointer units) to watch the stack collapse. */
   watch: { x: number; y: number };
 }
@@ -57,7 +68,7 @@ interface LayerObj {
 const GROUND = -1.18; // floor height in the avatar's own space
 
 export function createHeroScene(container: HTMLElement, opts: HeroSceneOptions): HeroScene {
-  const { layers, getProgress, onLayer, onAvatarClick, bubbleEl } = opts;
+  const { layers, getProgress, onLayer, onAvatarClick, bubbleEl, withAvatar = true, dark = false } = opts;
   const reduced = prefersReducedMotion();
 
   let layout: Layout | null = null;
@@ -71,11 +82,11 @@ export function createHeroScene(container: HTMLElement, opts: HeroSceneOptions):
   const { scene, camera, renderer, pointer } = stage;
 
   /* Lights ----------------------------------------------------------- */
-  scene.add(new THREE.HemisphereLight(C.paperHi, C.mist, 0.85));
-  const key = new THREE.DirectionalLight("#ffffff", 2.1);
+  scene.add(new THREE.HemisphereLight(C.paperHi, dark ? C.cobaltSoft : C.mist, dark ? 1.1 : 0.85));
+  const key = new THREE.DirectionalLight("#ffffff", dark ? 2.4 : 2.1);
   key.position.set(-3, 6, 5);
   scene.add(key);
-  const rim = new THREE.DirectionalLight(C.cobaltSoft, 1.5);
+  const rim = new THREE.DirectionalLight(C.cobaltSoft, dark ? 2.4 : 1.5);
   rim.position.set(4, 3, -4);
   scene.add(rim);
   // A cool fill from the stack's side, as if the screens light the avatar.
@@ -83,12 +94,14 @@ export function createHeroScene(container: HTMLElement, opts: HeroSceneOptions):
   scene.add(screenLight);
 
   /* Avatar ----------------------------------------------------------- */
-  const avatar = createAvatar();
-  scene.add(avatar.root);
-  const deskShadow = makeContactShadow(0.36);
-  deskShadow.scale.set(3.3, 2.1, 1);
-  deskShadow.position.set(0.05, GROUND + 0.005, 0.15);
-  avatar.root.add(deskShadow);
+  const avatar = withAvatar ? createAvatar() : null;
+  if (avatar) {
+    scene.add(avatar.root);
+    const deskShadow = makeContactShadow(0.36);
+    deskShadow.scale.set(3.3, 2.1, 1);
+    deskShadow.position.set(0.05, GROUND + 0.005, 0.15);
+    avatar.root.add(deskShadow);
+  }
 
   /* Layer stack ------------------------------------------------------ */
   const stack = new THREE.Group(); // positioned by layout
@@ -189,6 +202,7 @@ export function createHeroScene(container: HTMLElement, opts: HeroSceneOptions):
         avatar: new THREE.Vector3(0.2, -1.05, 0.9),
         avatarRot: -0.12,
         avatarScale: 1.0,
+        proShift: new THREE.Vector3(0.1, -0.3, 0),
         watch: { x: 0.55, y: 0.6 },
       };
     }
@@ -202,6 +216,7 @@ export function createHeroScene(container: HTMLElement, opts: HeroSceneOptions):
         avatar: new THREE.Vector3(1.45, -0.35, 0.6),
         avatarRot: -0.45,
         avatarScale: 1,
+        proShift: new THREE.Vector3(1.1, -0.2, 0),
         watch: { x: -0.6, y: 0.6 },
       };
     }
@@ -216,6 +231,7 @@ export function createHeroScene(container: HTMLElement, opts: HeroSceneOptions):
       avatar: new THREE.Vector3(2.35, -0.7, 0.8),
       avatarRot: -0.42,
       avatarScale: 1.18,
+      proShift: new THREE.Vector3(1.25, -0.5, 0.3),
       watch: { x: -0.75, y: 0.55 },
     };
   }
@@ -234,7 +250,7 @@ export function createHeroScene(container: HTMLElement, opts: HeroSceneOptions):
     const hit = stage.pick(x, y, arts)[0];
     return hit ? (hit.object.userData.index as number) : -1;
   };
-  const pickAvatar = (x: number, y: number) => stage.pick(x, y, avatar.hitTargets).length > 0;
+  const pickAvatar = (x: number, y: number) => !!avatar && stage.pick(x, y, avatar.hitTargets).length > 0;
 
   const lift = (i: number) => {
     const o = layerObjs[i];
@@ -263,7 +279,7 @@ export function createHeroScene(container: HTMLElement, opts: HeroSceneOptions):
     }
     if (a !== avatarHover) {
       avatarHover = a;
-      avatar.setHover(a);
+      avatar?.setHover(a);
     }
     el.style.cursor = a || i >= 0 ? "pointer" : "grab";
   };
@@ -279,7 +295,7 @@ export function createHeroScene(container: HTMLElement, opts: HeroSceneOptions):
     yawTarget = 0; // the stack springs back to its resting angle
     if (!tapped) return;
     if (pickAvatar(e.clientX, e.clientY)) {
-      avatar.wave();
+      avatar?.wave();
       onAvatarClick?.();
       return;
     }
@@ -291,7 +307,7 @@ export function createHeroScene(container: HTMLElement, opts: HeroSceneOptions):
   const onLeave = () => {
     hovered = -1;
     avatarHover = false;
-    avatar.setHover(false);
+    avatar?.setHover(false);
     onLayer?.(selected);
   };
   el.style.touchAction = "pan-y";
@@ -328,23 +344,27 @@ export function createHeroScene(container: HTMLElement, opts: HeroSceneOptions):
     camera.lookAt(L.target);
 
     // Avatar
-    avatar.root.position.copy(L.avatar);
-    avatar.root.rotation.y = L.avatarRot;
-    avatar.root.scale.setScalar(L.avatarScale);
+    if (avatar) {
+      avatar.root.position.copy(L.avatar);
+      avatar.root.rotation.y = L.avatarRot;
+      avatar.root.scale.setScalar(L.avatarScale);
+    }
     const w = smoothstep(0.15, 0.6, p);
     gaze.x = gaze.sx = THREE.MathUtils.lerp(pointer.sx, L.watch.x, w);
     gaze.y = gaze.sy = THREE.MathUtils.lerp(pointer.sy, L.watch.y, w);
     gaze.inside = pointer.inside;
-    avatar.update(dt, t, gaze, { reduced });
+    avatar?.update(dt, t, gaze, { reduced });
 
-    // Stack placement, with its shadow on the floor below.
+    // Stack placement, with its shadow on the floor below. Without the
+    // desk avatar the stack shifts toward the middle, clear of the model.
     stack.position.copy(L.stack);
+    if (!withAvatar) stack.position.add(L.proShift);
     stack.scale.setScalar(L.stackScale * (1 + p * 0.08));
     const floorY = L.avatar.y + GROUND * L.avatarScale;
     stackShadow.position.set(L.stack.x, floorY + 0.01, L.stack.z);
     const sh = L.stackScale * 3.4;
     stackShadow.scale.set(sh, sh * 0.62, 1);
-    stackShadow.material.opacity = 0.2 * (1 - p * 0.4);
+    stackShadow.material.opacity = withAvatar ? 0.2 * (1 - p * 0.4) : 0;
     screenLight.position.set(L.stack.x + 0.4, L.stack.y - 0.2, L.stack.z + 1.4);
 
     // Drag springs back; the pointer tilts the stack, also on springs.
@@ -389,7 +409,7 @@ export function createHeroScene(container: HTMLElement, opts: HeroSceneOptions):
     bezel.visible = done > 0.01;
 
     // Speech bubble follows the avatar's head on screen.
-    if (bubbleEl) {
+    if (bubbleEl && avatar) {
       tmp.copy(avatar.getHeadTop()).project(camera);
       const cw = container.clientWidth;
       const x = Math.min(cw - 130, Math.max(130, (tmp.x * 0.5 + 0.5) * cw));
@@ -399,12 +419,18 @@ export function createHeroScene(container: HTMLElement, opts: HeroSceneOptions):
   }
 
   return {
+    stackOnScreen() {
+      const v = new THREE.Vector3();
+      stack.getWorldPosition(v).project(camera);
+      const r = container.getBoundingClientRect();
+      return { x: (v.x * 0.5 + 0.5) * r.width + r.left, y: (-v.y * 0.5 + 0.5) * r.height + r.top };
+    },
     highlight(i: number) {
       if (i >= 0 && i !== selected) lift(i);
       selected = i;
     },
     wave: () => {
-      avatar.wave();
+      avatar?.wave();
       onAvatarClick?.();
     },
     dispose() {

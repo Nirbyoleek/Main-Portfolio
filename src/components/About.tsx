@@ -36,7 +36,7 @@ export default function About() {
           </p>
         </div>
 
-        <aside className="glance" aria-labelledby="glance-title" data-reveal>
+        <aside className="glance" aria-labelledby="glance-title" data-reveal data-spot>
           <div className="glance__head">
             <h3 id="glance-title">At a glance</h3>
             <a className="link-btn" href={`./${person.resume}`} download>
@@ -58,7 +58,7 @@ export default function About() {
         <h3 className="sub-title">What I bring</h3>
         <ul className="strengths" data-reveal>
           {strengths.map((s, i) => (
-            <li key={s.title} style={{ "--i": i } as CSSProperties}>
+            <li key={s.title} style={{ "--i": i } as CSSProperties} data-spot>
               <h4>{s.title}</h4>
               <p>{s.body}</p>
             </li>
@@ -70,7 +70,7 @@ export default function About() {
           {impact.map((d, i) => {
             const up = d.after > 100;
             return (
-              <li key={d.metric} className={up ? "is-up" : "is-down"} style={{ "--i": i } as CSSProperties}>
+              <li key={d.metric} className={up ? "is-up" : "is-down"} style={{ "--i": i } as CSSProperties} data-spot>
                 <div className="impact__top">
                   <span className="impact__value">
                     <CountUp value={d.change} />

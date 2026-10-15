@@ -13,6 +13,7 @@ const links = [
 export default function Nav() {
   const [open, setOpen] = useState(false);
   const [solid, setSolid] = useState(false);
+  const [dark, setDark] = useState(true);
   const [active, setActive] = useState("");
   const [palette, setPalette] = useState(false);
   const bar = useRef<HTMLSpanElement | null>(null);
@@ -26,6 +27,9 @@ export default function Nav() {
     const onScroll = () => {
       const y = window.scrollY;
       setSolid(y > 40);
+      // Light text while the bar sits over the dark hero.
+      const hero = document.getElementById("top");
+      setDark(!!hero && hero.getBoundingClientRect().bottom > 64);
       const max = document.documentElement.scrollHeight - window.innerHeight;
       if (bar.current) bar.current.style.transform = `scaleX(${max > 0 ? y / max : 0})`;
       let cur = "";
@@ -80,7 +84,7 @@ export default function Nav() {
 
   return (
     <>
-      <header className={`nav ${solid ? "nav--solid" : ""} ${open ? "nav--open" : ""}`}>
+      <header className={`nav ${solid ? "nav--solid" : ""} ${dark ? "nav--dark" : ""} ${open ? "nav--open" : ""}`}>
         <a className="nav__mark" href="#top" aria-label="Nirbyoleek Das, back to top">
           <span>ND</span>
         </a>

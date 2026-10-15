@@ -125,3 +125,35 @@ export function useMagneticButtons(): void {
     };
   }, []);
 }
+
+/**
+ * Cards marked `data-spot` get a soft light that follows the pointer
+ * (the position is written to --sx/--sy; CSS draws the glow). One listener
+ * for the whole page; nothing runs on touch screens.
+ */
+export function useSpotlight(): void {
+  useEffect(() => {
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+    let raf = 0;
+    let last: PointerEvent | null = null;
+    const apply = () => {
+      raf = 0;
+      const e = last;
+      if (!e) return;
+      const card = (e.target as Element | null)?.closest?.<HTMLElement>("[data-spot]");
+      if (!card) return;
+      const r = card.getBoundingClientRect();
+      card.style.setProperty("--sx", `${(e.clientX - r.left).toFixed(0)}px`);
+      card.style.setProperty("--sy", `${(e.clientY - r.top).toFixed(0)}px`);
+    };
+    const onMove = (e: PointerEvent) => {
+      last = e;
+      if (!raf) raf = requestAnimationFrame(apply);
+    };
+    document.addEventListener("pointermove", onMove, { passive: true });
+    return () => {
+      document.removeEventListener("pointermove", onMove);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+}
