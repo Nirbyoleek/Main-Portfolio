@@ -117,20 +117,28 @@ export function useScene<T extends SceneHandle>(
 export function useScrollProgress(ref: RefObject<HTMLElement | null>): RefObject<number> {
   const progress = useRef(0);
   useEffect(() => {
+    let raf = 0;
     const update = () => {
+      raf = 0;
       const el = ref.current;
       if (!el) return;
       const r = el.getBoundingClientRect();
+      // Past the element: nothing to update until it comes back.
+      if (r.bottom < 0 && progress.current === 1) return;
       const span = Math.max(1, r.height - window.innerHeight);
       progress.current = Math.min(1, Math.max(0, -r.top / span));
       el.style.setProperty("--p", progress.current.toFixed(3));
     };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
     update();
-    window.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
     return () => {
-      window.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
     };
   }, [ref]);
   return progress;

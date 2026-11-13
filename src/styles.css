@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------
-   Tokens — keep in sync with src/three/palette.js
+   Tokens — keep in sync with src/three/palette.ts
 ------------------------------------------------------------------- */
 @font-face {
   font-family: "Archivo";
@@ -2026,7 +2026,7 @@ main {
   border-top: 1px solid color-mix(in srgb, var(--paper-hi) 30%, transparent);
 }
 .contact__facts dt {
-  color: color-mix(in srgb, var(--paper-hi) 75%, transparent);
+  color: color-mix(in srgb, var(--paper-hi) 86%, transparent);
   font-weight: 600;
 }
 .contact__facts dd {
@@ -2407,7 +2407,6 @@ main {
 .tags li:hover {
   transform: translateY(-2px);
 }
-.skill-list button,
 .matrix__group li button {
   transition:
     color 0.2s,

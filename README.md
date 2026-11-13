@@ -49,6 +49,10 @@ layouts reflow, and WebGL pixel ratio is capped on touch devices. Respects
   far less than extra render passes.
 - **Adaptive resolution.** If frames slow down, the 3D renders fewer pixels; when
   they speed up again it steps back up.
+- **Off-screen scenes stop.** Each 3D scene's frame loop halts while it is out of
+  view or the tab is hidden, and restarts when it comes back.
+- **Scroll work is batched.** Scroll-driven updates (nav state, reading progress,
+  hero progress, timeline) run at most once per frame.
 - **Light devices get a static version.** Data-saver mode, 2G, very low memory, no
   WebGL, or `?lite` in the URL skip three.js entirely and show flat project
   screens instead.
@@ -61,7 +65,7 @@ from about 5.8 s to about 0.35 s, and the JavaScript needed for it from 834 KB t
 ## Sharing and search
 
 `index.html` carries Open Graph and Twitter tags with a 1200×630 preview image
-(`public/og-image.png`), a canonical URL, and a schema.org `Person` record. The build
+(`public/og-image.jpg`), a canonical URL, and a schema.org `Person` record. The build
 also writes `robots.txt` and `sitemap.xml`. The site URL comes from Netlify's `URL`
 variable; set `SITE_URL` to override it (for a custom domain).
 

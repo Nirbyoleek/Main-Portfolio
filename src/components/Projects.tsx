@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { projects } from "../data/content";
 import { useScene } from "../hooks";
-import { drawProject } from "../lib/drawings";
 
 type Filter = "all" | "client" | "personal";
 
@@ -11,17 +10,46 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: "personal", label: "Personal" },
 ];
 
-/** The project's screen as a flat image, for the static version and while 3D loads. */
+/**
+ * The project's screen as a flat picture, for the static version and while
+ * 3D loads. Drawn only once the section is near the viewport, straight onto
+ * a canvas (no image encoding), with the drawing code loaded on demand.
+ */
 function ProjectStill({ mock, name }: { mock: string; name: string }) {
-  const src = useMemo(() => {
-    try {
-      return drawProject(mock).toDataURL("image/png");
-    } catch {
-      return "";
-    }
-  }, [mock]);
-  if (!src) return null;
-  return <img className="projects__still" src={src} alt={`Interface of ${name}`} width="1024" height="720" />;
+  const ref = useRef<HTMLCanvasElement | null>(null);
+  const [near, setNear] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || near) return;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) {
+          io.disconnect();
+          setNear(true);
+        }
+      },
+      { rootMargin: "400px 0px" }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [near]);
+  useEffect(() => {
+    if (!near) return;
+    let live = true;
+    import("../lib/drawings")
+      .then(({ drawProject }) => {
+        const el = ref.current;
+        const ctx = el?.getContext("2d");
+        if (!live || !el || !ctx) return;
+        ctx.clearRect(0, 0, el.width, el.height);
+        ctx.drawImage(drawProject(mock), 0, 0, el.width, el.height);
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [near, mock]);
+  return <canvas ref={ref} className="projects__still" width={1024} height={720} role="img" aria-label={`Interface of ${name}`} />;
 }
 
 export default function Projects() {

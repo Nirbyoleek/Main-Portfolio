@@ -99,15 +99,12 @@ export function createStage(container: HTMLElement, { fov = 35, onFrame, onResiz
   ro.observe(container);
   resize();
 
-  // Only render while on screen and while the tab is visible.
+  // Only run while on screen and while the tab is visible: the frame loop
+  // stops completely otherwise, so off-screen scenes cost nothing.
   let visible = true;
-  const io = new IntersectionObserver(
-    ([entry]) => {
-      visible = entry.isIntersecting;
-    },
-    { rootMargin: "120px" }
-  );
-  io.observe(container);
+  let raf = 0;
+  let last = 0;
+  let elapsed = 0;
 
   // Adaptive resolution: if frames run slow, render fewer pixels; if they
   // run fast for a while, step back up. Keeps motion smooth on weak GPUs.
@@ -131,24 +128,19 @@ export function createStage(container: HTMLElement, { fov = 35, onFrame, onResiz
     }
   };
 
-  let raf = 0;
-  let last = performance.now();
-  let elapsed = 0;
-  let wasVisible = true;
-  const loop = (now: number = performance.now()) => {
+  const loop = (now: number) => {
+    raf = 0;
+    if (!visible || document.hidden) return;
     raf = requestAnimationFrame(loop);
+    // The first frame after (re)starting only sets the clock, so time spent
+    // paused doesn't jump the animation.
+    if (!last) {
+      last = now;
+      return;
+    }
     const ms = now - last;
     const dt = Math.min(Math.max(0, ms / 1000), 0.1);
     last = now;
-    if (!visible || document.hidden) {
-      wasVisible = false;
-      return;
-    }
-    // Coming back on screen: don't count the time spent hidden.
-    if (!wasVisible) {
-      wasVisible = true;
-      return;
-    }
     elapsed += dt;
     adapt(ms, dt);
     pointer.sx += (pointer.x - pointer.sx) * Math.min(1, dt * 6);
@@ -156,7 +148,21 @@ export function createStage(container: HTMLElement, { fov = 35, onFrame, onResiz
     onFrame?.(dt, elapsed);
     renderer.render(scene, camera);
   };
-  raf = requestAnimationFrame(loop);
+  const start = () => {
+    if (raf || !visible || document.hidden) return;
+    last = 0;
+    raf = requestAnimationFrame(loop);
+  };
+  const io = new IntersectionObserver(
+    ([entry]) => {
+      visible = entry.isIntersecting;
+      start();
+    },
+    { rootMargin: "120px" }
+  );
+  io.observe(container);
+  document.addEventListener("visibilitychange", start);
+  start();
 
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
@@ -169,8 +175,11 @@ export function createStage(container: HTMLElement, { fov = 35, onFrame, onResiz
 
   const dispose = () => {
     cancelAnimationFrame(raf);
+    raf = 0;
+    visible = false;
     ro.disconnect();
     io.disconnect();
+    document.removeEventListener("visibilitychange", start);
     window.removeEventListener("pointermove", onMove);
     scene.traverse((o) => {
       if (!(o instanceof THREE.Mesh)) return;

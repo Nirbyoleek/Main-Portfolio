@@ -26,12 +26,20 @@ export function useRevealOnScroll(): void {
       },
       { rootMargin: "0px 0px -12% 0px", threshold: 0.05 }
     );
-    const watch = () => document.querySelectorAll("[data-reveal]:not(.is-in)").forEach((el) => io.observe(el));
+    const watch = () => {
+      raf = 0;
+      document.querySelectorAll("[data-reveal]:not(.is-in)").forEach((el) => io.observe(el));
+    };
+    let raf = 0;
     watch();
-    // Sections render their content after data changes; pick up new nodes.
-    const mo = new MutationObserver(watch);
+    // Sections render their content after data changes; pick up new nodes,
+    // at most once per frame.
+    const mo = new MutationObserver(() => {
+      if (!raf) raf = requestAnimationFrame(watch);
+    });
     mo.observe(document.body, { childList: true, subtree: true });
     return () => {
+      cancelAnimationFrame(raf);
       io.disconnect();
       mo.disconnect();
       root.classList.remove("motion-ok");

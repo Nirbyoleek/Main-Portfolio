@@ -22,27 +22,36 @@ export default function Nav() {
   const closePalette = useCallback(() => setPalette(false), []);
   const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 
-  // Solid background, reading progress and the current section.
+  // Solid background, reading progress and the current section. Work is
+  // batched into one animation frame per scroll burst, and the section
+  // elements are looked up once.
   useEffect(() => {
-    const onScroll = () => {
+    const hero = document.getElementById("top");
+    const sections = links.map((l) => [l.href, document.querySelector<HTMLElement>(l.href)] as const);
+    let raf = 0;
+    const update = () => {
+      raf = 0;
       const y = window.scrollY;
+      const vh = window.innerHeight;
       setSolid(y > 40);
       // Light text while the bar sits over the dark hero.
-      const hero = document.getElementById("top");
       setDark(!!hero && hero.getBoundingClientRect().bottom > 64);
-      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const max = document.documentElement.scrollHeight - vh;
       if (bar.current) bar.current.style.transform = `scaleX(${max > 0 ? y / max : 0})`;
       let cur = "";
-      for (const l of links) {
-        const el = document.querySelector(l.href);
-        if (el && el.getBoundingClientRect().top < window.innerHeight * 0.4) cur = l.href;
+      for (const [href, el] of sections) {
+        if (el && el.getBoundingClientRect().top < vh * 0.4) cur = href;
       }
       setActive(cur);
     };
-    onScroll();
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+    update();
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
     return () => {
+      cancelAnimationFrame(raf);
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
     };

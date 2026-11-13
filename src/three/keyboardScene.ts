@@ -107,7 +107,7 @@ export function createKeyboardScene(
 
   const allKeys: KeyDef[] = [
     ...skills.map((s, i) => ({ ...s, index: i })),
-    { label: "Space makes a wave", w: 4, tone: "blank", index: -1, space: true },
+    { label: "Press for a wave", w: 4, tone: "blank", index: -1, space: true },
   ];
 
   const keys: Key[] = allKeys.map((s) => {
@@ -274,11 +274,6 @@ export function createKeyboardScene(
     if (!onScreen || e.metaKey || e.ctrlKey || e.altKey) return;
     const tag = document.activeElement?.tagName;
     if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || tag === "BUTTON" || tag === "A") return;
-    if (e.code === "Space") {
-      e.preventDefault();
-      triggerWave(0);
-      return;
-    }
     const ch = e.key.length === 1 ? e.key.toLowerCase() : "";
     if (!/[a-z]/.test(ch)) return;
     const matches = keys.filter((k) => !k.s.space && k.s.label.toLowerCase().startsWith(ch));

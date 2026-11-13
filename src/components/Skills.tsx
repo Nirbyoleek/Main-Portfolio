@@ -29,7 +29,7 @@ export default function Skills() {
               <p>
                 {state === "lite"
                   ? "The full list is below."
-                  : "Press a key to see where I've used it. Type a letter to jump to a skill, or hit space."}
+                  : "Press a key to see where I've used it. Type a letter to jump to a skill."}
               </p>
             </>
           )}
