@@ -87,7 +87,7 @@ export const person: Person = {
   role: "Software Engineer",
   headline:
     "I build production web apps end to end for enterprise teams, from API design and data model to the interface and the release.",
-  current: { title: "Application Engineer", company: "Tiger Analytics" },
+  current: { title: "Senior Engineer", company: "Tiger Analytics" },
   location: "India",
   email: "nirbyoleek152001@gmail.com",
   phone: "+91 79080 94747",
@@ -144,7 +144,7 @@ export const impact: Impact[] = [
 export const experience: Role[] = [
   {
     company: "Tiger Analytics",
-    title: "Application Engineer",
+    title: "Senior Engineer",
     place: "Chennai",
     start: "2024-08",
     end: null,
