@@ -1,7 +1,6 @@
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import { heroShell } from "./src/lib/shell";
-import { avatarModel } from "./src/data/content";
 
 // Netlify sets `URL` to the site's main address during builds. Set SITE_URL
 // to override it (for a custom domain, say).
@@ -18,7 +17,6 @@ function seo(): Plugin {
     transformIndexHtml: (html) =>
       html
         .replaceAll("%SITE_URL%", SITE_URL)
-        .replaceAll("%AVATAR_STILL%", (avatarModel?.still ?? "./avatar.webp").replace(/^\.\//, "/"))
         .replace('<div id="root"></div>', `<div id="root">${heroShell()}</div>`),
     generateBundle() {
       this.emitFile({

@@ -11,7 +11,7 @@ describe("heroShell", () => {
   });
   it("links the resume and uses the same classes as the React hero", () => {
     expect(html).toContain(`href="./${person.resume}"`);
-    for (const c of ["hero__stage", "hero__copy", "hero__name", "hero__role", "hero__stats", "hero__still"]) {
+    for (const c of ["hero__stage", "hero__copy", "hero__name", "hero__role", "hero__stats"]) {
       expect(html).toContain(`class="${c}`);
     }
   });
